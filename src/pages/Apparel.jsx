@@ -1,0 +1,493 @@
+import React, { useMemo, useState } from "react";
+import "./Shoes.css";
+// IMPORT the hero image from your src tree so the bundler resolves it correctly.
+// Adjust the path if your image is in a different folder under src.
+import ShoesHero from "../assets/images/dashboard/apparel2.png";
+
+/* Helper: build a friendly name from the Cloudinary filename */
+function friendlyNameFromUrl(url) {
+  try {
+    const parts = url.split("/");
+    let name = parts[parts.length - 1] || url;
+    name = name.replace(/\.[a-zA-Z0-9]+$/, "");
+    name = name.replace(/(_\d+){1,3}$/, "");
+    name = name.replace(/[_]+/g, " ").replace(/\s{2,}/g, " ").trim();
+    if (name.length > 60) return name.slice(0, 57) + "...";
+    return decodeURIComponent(name);
+  } catch {
+    return url;
+  }
+}
+
+/* All Cloudinary product URLs provided by the user (replaced as requested) */
+const productUrls = [
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634914/products/NOCANCE_2023_new_arrivals_sexy_suspender_sparkling_rhineston_NOCANCE_2023_new_arrivals_sexy_suspender_sparkling_rhineston_129_8.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634911/products/NH08_Fall_Fashion_Elegant_Girls_Women_summer_clothes_for_wom_NH08_Fall_Fashion_Elegant_Girls_Women_summer_clothes_for_wom_169_8.png",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634910/products/NC143_Fall_Winter_Fashion_Elegant_long_Evening_Office_Casual_NC143_Fall_Winter_Fashion_Elegant_long_Evening_Office_Casual_206_25.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634877/products/Modest_wedding_dress_muslim_wedding_gown_wedding_dress_brida_Modest_wedding_dress_muslim_wedding_gown_wedding_dress_brida_947_7.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634855/products/Mink_Fur_Coat_Woman_Winter_Coat_Japan_Style_Long_Winter_Coat_Mink_Fur_Coat_Woman_Winter_Coat_Japan_Style_Long_Winter_Coat_944_9.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634855/products/Military_Tactical_Men_s_Embroidered_Baseball_Motorcycle_Shee_Military_Tactical_Men_s_Embroidered_Baseball_Motorcycle_Shee_328_9.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634848/products/Men_s_luxury_Sequin_slim_Jacket_Performance_Nightclub_DJ_Sin_Men_s_luxury_Sequin_slim_Jacket_Performance_Nightclub_DJ_Sin_308_33.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634842/products/Men_s_Jacket_Ripped_Washed_Old_Denim_Jacket_Jean_Jacket_Fash_Men_s_Jacket_Ripped_Washed_Old_Denim_Jacket_Jean_Jacket_Fash_396.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634841/products/Men_s_Three-piece_Suit_Korean_Slim_Suit_Business_Fashion_Clo_Men_s_Three-piece_Suit_Korean_Slim_Suit_Business_Fashion_Clo_121.png",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634841/products/Men_s_Quick_Dry_Fitness_Tees_Custom_Long_Sleeve_Compression_Men_s_Quick_Dry_Fitness_Tees_Custom_Long_Sleeve_Compression_414_7.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634841/products/Men_s_Designer_Sheepskin_Shearling_Leather_Fur_Coat_Men_s_De_Men_s_Designer_Sheepskin_Shearling_Leather_Fur_Coat_455.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634841/products/Men_s_Business_Casual_Dress_Double_Breasted_Summer_Clothing_Men_s_Business_Casual_Dress_Double_Breasted_Summer_Clothing_442_2.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634838/products/Men_casual_clothing_gray_mink_fur_coat_100_real_winter_coat_Men_casual_clothing_gray_mink_fur_coat_100_real_winter_coat_539.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634829/products/Men_S_Fur_Hoodies_Coats_Winter_Warm_Long_Coat_Cotton_Clothe_Men_S_Fur_Hoodies_Coats_Winter_Warm_Long_Coat_Cotton_Clothe_459_81.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634829/products/Men_S_Fur_Hoodies_Coats_Winter_Warm_Long_Coat_Cotton_Clothe_Men_S_Fur_Hoodies_Coats_Winter_Warm_Long_Coat_Cotton_Clothe_459_81.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634828/products/Men_Sport_Grey_Jacket_100_Wool_Short_SKUDOMADE_-_NFC_Button_Men_Sport_Grey_Jacket_100_Wool_Short_SKUDOMADE_-_NFC_Button_550.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634828/products/Men_Luxury_Green_Coat_Jacket_-_Short_-_SKUDOMADE_-_Tailormad_Men_Luxury_Green_Coat_Jacket_-_Short_-_SKUDOMADE_-_Tailormad_550.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634794/products/Made_in_Italy_luxury_clothing_women_s_kornflower_biker_fashi_Made_in_Italy_luxury_clothing_women_s_kornflower_biker_fashi_350.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634789/products/Manufactory_Wholesale_Women_Leather_Jacket_Wholesale_Real_Le_Manufactory_Wholesale_Women_Leather_Jacket_Wholesale_Real_Le_286.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634781/products/Made_in_Italy_Top_Quality_White_Sweatshirt_with_zipper_for_w_Made_in_Italy_Top_Quality_White_Sweatshirt_with_zipper_for_w_2600.png",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634781/products/Made_in_Italy_brown_leather_coat_for_men_OEM_services_high_q_Made_in_Italy_brown_leather_coat_for_men_OEM_services_high_q_264.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634781/products/Made_in_Italy_Top_Quality_Long_Pink_Shirt_for_woman_dress_fo_Made_in_Italy_Top_Quality_Long_Pink_Shirt_for_woman_dress_fo_2600.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634770/products/Made_In_Italy_-_Women_s_Leather_Jacket_in_Genuine_Leather_-_Made_In_Italy_-_Women_s_Leather_Jacket_in_Genuine_Leather_-_207_9.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634767/products/Made_in_Italy_Top_Quality_Long_Nature_Fancy_Dress_for_woman_Made_in_Italy_Top_Quality_Long_Nature_Fancy_Dress_for_woman_2600.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634762/products/Maddy_Dress_Maddy_Dress_We_are_a_leading_marketing_agency_that_utilizes_over_10_year_187_5.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634751/products/MWFur_Real_Fox_Fur_Men_s_Parkas_Fox_Fur_Collar_Hooded_Detach_MWFur_Real_Fox_Fur_Men_s_Parkas_Fox_Fur_Collar_Hooded_Detach_361_9.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634750/products/MWFur_Fashion_Coat_Women_Clothing_Large_size_Genuine_Pure_Na_MWFur_Fashion_Coat_Women_Clothing_Large_size_Genuine_Pure_Na_611_25.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634749/products/MTM_Men_luxury_Navy_tuxedo_suit_Bespoke_men_wedding_suit_MT_MTM_Men_luxury_Navy_tuxedo_suit_Bespoke_men_wedding_suit_221_1.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634722/products/Luxury_made_in_Italy_genuine_leather_double-breasted_reversi_Luxury_made_in_Italy_genuine_leather_double-breasted_reversi_1737_5.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634720/products/Luxury_made_in_Italy_real_fur_reversible_women_shearling_coa_Luxury_made_in_Italy_real_fur_reversible_women_shearling_coa_1917.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634704/products/Luxury_Sweetheart_Quinceanera_Dress_Party_Dress_Classic_Tull_Luxury_Sweetheart_Quinceanera_Dress_Party_Dress_Classic_Tull_260.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634704/products/Luxury_Wine_Red_Long_Sleeve_Muslim_Dubai_kaftans_Pakistani_E_Luxury_Wine_Red_Long_Sleeve_Muslim_Dubai_kaftans_Pakistani_E_129_8.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634702/products/Luxury_Stylish_Royal_New_Men_s_Collection_Suits_And_Blazers_Luxury_Stylish_Royal_New_Men_s_Collection_Suits_And_Blazers_187_5.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634699/products/Luxury_Mink_Coat_Women_s_Slim_Fit_Short_Thermal_Fur_Coats_At_Luxury_Mink_Coat_Women_s_Slim_Fit_Short_Thermal_Fur_Coats_At_1007_5.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634694/products/Luxuriously_tailored_my_leather_jacket_wool_panels_real_cowh_Luxuriously_tailored_my_leather_jacket_wool_panels_real_cowh_166_32.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634694/products/Luxuriously_tailored_my_leather_jacket_wool_panels_real_cowh_Luxuriously_tailored_my_leather_jacket_wool_panels_real_cowh_166_32.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634685/products/Loose_pure_color_elegant_set_woman_crewneck_casual_sweater_s_Loose_pure_color_elegant_set_woman_crewneck_casual_sweater_s_171_6.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634686/products/Low_MOQ_hot_selling_spring_short_style_5_sections_ladies_fur_Low_MOQ_hot_selling_spring_short_style_5_sections_ladies_fur_251_9.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634685/products/Long_Jacket_Plazo_Classy_heavy_Beautiful_Dress_with_heavy_Long_Jacket_Plazo_Classy_heavy_Beautiful_Dress_with_heavy_528.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634679/products/Letter_Jacquard_Polo_Neck_Knitted_Short_Sleeve_Women_Dress_V_Letter_Jacquard_Polo_Neck_Knitted_Short_Sleeve_Women_Dress_V_135_28.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634674/products/Latest_Model_Best_Boutique_Dress_For_Ladies_Wholesale_100_Latest_Model_Best_Boutique_Dress_For_Ladies_Wholesale_100_770_5.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634671/products/Latest_2023_Men_Moto_Riding_Motorbike_Cordura_Suit_Motorcycl_Latest_2023_Men_Moto_Riding_Motorbike_Cordura_Suit_Motorcycl_325.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634671/products/Leather_coat_men_s_short_lapel_suede_jacket_Mink_liner_fur_c_Leather_coat_men_s_short_lapel_suede_jacket_Mink_liner_fur_c_378.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634668/products/Leather_down_jacket_women_s_medium_and_long_sheep_skin_down_Leather_down_jacket_women_s_medium_and_long_sheep_skin_down_312.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634657/products/Large_Natural_Raccoon_Fox_Fur_Hooded_Winter_Down_Coat_Women_Large_Natural_Raccoon_Fox_Fur_Hooded_Winter_Down_Coat_Women_324_5.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634648/products/Ladies_cashmere_two_piece_set_knitted_100_cashmere_hooded_s_Ladies_cashmere_two_piece_set_knitted_100_cashmere_hooded_s_209_3.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634647/products/Ladies_Real_Sheep_Fur_Jacket_women_double-sided_Overcoat_Win_Ladies_Real_Sheep_Fur_Jacket_women_double-sided_Overcoat_Win_211_2.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634641/products/Korean_Style_Gradient_Color_Hooded_Fur_Coat_For_Women_2023_N_Korean_Style_Gradient_Color_Hooded_Fur_Coat_For_Women_2023_N_354_9.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634617/products/Jindou_2022_Woman_s_Long_Coat_Brown_Overcoat_Modern_Fashion_Jindou_2022_Woman_s_Long_Coat_Brown_Overcoat_Modern_Fashion_783_75.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634610/products/Jancember_RSM67248_High_Neck_Long_Sleeve_Muslim_Mermaid_Deta_Jancember_RSM67248_High_Neck_Long_Sleeve_Muslim_Mermaid_Deta_742_5.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634610/products/Jancember_RSM67248_High_Neck_Long_Sleeve_Muslim_Mermaid_Deta_Jancember_RSM67248_High_Neck_Long_Sleeve_Muslim_Mermaid_Deta_742_5.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634580/products/Italian_handmade_wool_men_s_wedding_bridegroom_suit_busines_Italian_handmade_wool_men_s_wedding_bridegroom_suit_busines_591_8.png",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634565/products/Integrated_Fur_And_100_Double-sided_Tweed_Fur_Coat_Women_Re_Integrated_Fur_And_100_Double-sided_Tweed_Fur_Coat_Women_Re_272_8.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634563/products/Interactive_Workout_Smart_Home_Full_Size_Body_Smart_Fitness_Interactive_Workout_Smart_Home_Full_Size_Body_Smart_Fitness_528_44.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634562/products/Innovative_Products_Spring_And_Autumn_Brown_Men_S_Clothing_C_Innovative_Products_Spring_And_Autumn_Brown_Men_S_Clothing_C_438_9.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634555/products/In_winter_2022_the_new_imported_whole-skin_fox_fur_coat_wom_We_are_a_leading_marketing_agency_that_utilizes_over_10_year_In_winter_2022_the_new_imported_whole-skin_fox_fur_coat_wom.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634555/products/In_winter_2022_the_new_imported_whole-skin_fox_fur_coat_wom_We_are_a_leading_marketing_agency_that_utilizes_over_10_year_In_winter_2022_the_new_imported_whole-skin_fox_fur_coat_wom.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634538/products/Huili_OEMODM_service_wholesale_customized_products_Men_jeans_Huili_OEMODM_service_wholesale_customized_products_Men_jeans_110.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634538/products/Huili_OEMODM_service_wholesale_customized_products_Men_jeans_Huili_OEMODM_service_wholesale_customized_products_Men_jeans_110.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634479/products/Hot_Sale_Plus_Size_Coat_Winter_Clothes_For_Men_Faux_Fur_Park_Hot_Sale_Plus_Size_Coat_Winter_Clothes_For_Men_Faux_Fur_Park_286.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634456/products/Hign_Filling_Power_Real_Goose_Down_Plus_Size_Parka_Jacket_Fo_Hign_Filling_Power_Real_Goose_Down_Plus_Size_Parka_Jacket_Fo_192_4.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634440/products/High_quality_light_luxury_fox_fur_handbag_winter_color_fox_f_High_quality_light_luxury_fox_fur_handbag_winter_color_fox_f_453_7.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634439/products/High_quality_fashion_factory_made_korean_girls_winter_women_High_quality_fashion_factory_made_korean_girls_winter_women_276.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634434/products/High_quality_cashmere_shorts_suit_long_sleeve_tops_shorts_an_High_quality_cashmere_shorts_suit_long_sleeve_tops_shorts_an_309_4.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634434/products/High_quality_cashmere_shorts_suit_long_sleeve_tops_shorts_an_High_quality_cashmere_shorts_suit_long_sleeve_tops_shorts_an_309_4.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634417/products/High_Quality_Women_s_Cargo_Pants_Loose_High_Waist_Casual_Pan_High_Quality_Women_s_Cargo_Pants_Loose_High_Waist_Casual_Pan_21_6.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634415/products/High_Quality_Mens_Green_Wedding_Suits_Made_To_Measure_Evenin_High_Quality_Mens_Green_Wedding_Suits_Made_To_Measure_Evenin_141_9.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634319/products/HUIMEI_Windproof_Fox_Fur_Collar_Down_Jacket_Outdoor_Winter_W_HUIMEI_Windproof_Fox_Fur_Collar_Down_Jacket_Outdoor_Winter_W_201_84.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634284/products/Green_single-shoulder_high-end_elegant_temperament_slim_fish_Green_single-shoulder_high-end_elegant_temperament_slim_fish_328_9.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634284/products/Green_single-shoulder_high-end_elegant_temperament_slim_fish_Green_single-shoulder_high-end_elegant_temperament_slim_fish_328_9.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634275/products/Glowing_led_light_up_fiber_optical_fabric_wedding_dress_Glow_Glowing_led_light_up_fiber_optical_fabric_wedding_dress_908_7.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634274/products/Good_Quality_Fashion_Women_s_Coats_2022_Winter_Fox_Fur_Coat_Good_Quality_Fashion_Women_s_Coats_2022_Winter_Fox_Fur_Coat_280_5.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634265/products/Genuine_Leather_Mustard_Women_s_Leather_Coat_2101_New_Season_Genuine_Leather_Mustard_Women_s_Leather_Coat_2101_New_Season_531_25.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634264/products/Genuine_Leather_Navy_Blue_Women_s_Suede_Leather_Coat_973-1_N_Genuine_Leather_Navy_Blue_Women_s_Suede_Leather_Coat_973-1_N_363.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634260/products/Genuine_Fox_Fur_100_Silk_Lining_Reversible_Jacket_For_Ladie_Genuine_Fox_Fur_100_Silk_Lining_Reversible_Jacket_For_Ladie_275.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634251/products/Garment_factory_Custom_men_chenille_patch_Embroidery_Basebal_Garment_factory_Custom_men_chenille_patch_Embroidery_Basebal_123_2.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634258/products/Genuine_Chinchilla_Rabbit_Fur_Jacket_Coat_for_Women_s_Genuin_Genuine_Chinchilla_Rabbit_Fur_Jacket_Coat_for_Women_s_2201_1.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634258/products/Genuine_Leather_Men_s_Goatskin_Mink_Liner_Whole_Mink_Pie_Ove_Genuine_Leather_Men_s_Goatskin_Mink_Liner_Whole_Mink_Pie_Ove_610_87.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634259/products/Genuine_Fox_Fur_Jacket_2020_Winter_Warm_Wholesale_Womans_Fur_Genuine_Fox_Fur_Jacket_2020_Winter_Warm_Wholesale_Womans_Fur_350_9.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634239/products/Fur_Over_Coat_Lady_Winter_Coat_Woman_Winter_Real_Fur_Coat_Fo_Fur_Over_Coat_Lady_Winter_Coat_Woman_Winter_Real_Fur_Coat_Fo_253.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634217/products/Fox_fur_Large_fur_collar_Women_s_winter_clothes_keep_warm_Sh_Fox_fur_Large_fur_collar_Women_s_winter_clothes_keep_warm_Sh_220.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634217/products/Fox_fur_Large_fur_collar_Women_s_winter_clothes_keep_warm_Sh_Fox_fur_Large_fur_collar_Women_s_winter_clothes_keep_warm_Sh_220.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634217/products/Fox_fur_Large_fur_collar_Women_s_winter_clothes_keep_warm_Sh_Fox_fur_Large_fur_collar_Women_s_winter_clothes_keep_warm_Sh_220.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634152/products/Fashion_winter_fox_fur_collar_trimming_real_mink_fur_women_Fashion_winter_fox_fur_collar_trimming_real_mink_fur_women_748_75.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634151/products/Fashion_raccoon_hair_splicing_hooded_women_s_turkey_faux_fur_Fashion_raccoon_hair_splicing_hooded_women_s_turkey_faux_fur_446_44.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634144/products/Fashion_Winter_Women_s_Fur_Clothing_Jacket_Bomber_Luxury_Cro_Fashion_Winter_Women_s_Fur_Clothing_Jacket_Bomber_Luxury_Cro_887_5.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634144/products/Fashion_Winter_Women_s_Fur_Clothing_Jacket_Bomber_Luxury_Cro_Fashion_Winter_Women_s_Fur_Clothing_Jacket_Bomber_Luxury_Cro_887_5.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634143/products/Fashion_Trend_Winter_Warm_Fluffy_Jacket_Real_Crop_Fox_Fur_Co_Fashion_Trend_Winter_Warm_Fluffy_Jacket_Real_Crop_Fox_Fur_Co_345.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634136/products/Fashion_Brautkleid_Sleeveless_Puffy_Skirt_Two_Piece_Red_And_Fashion_Brautkleid_Sleeveless_Puffy_Skirt_Two_Piece_Red_And_150.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634136/products/Fashion_Custom_Long_Sleeves_Fluffy_Hooded_Fur_Jacket_Winter_Fashion_Custom_Long_Sleeves_Fluffy_Hooded_Fur_Jacket_Winter_450.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634140/products/Fashion_High_Quality_Women_Wholesale_Fox_Fur_Jacket_Silver_B_Fashion_High_Quality_Women_Wholesale_Fox_Fur_Jacket_Silver_B_432_5.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634140/products/Fashion_High_Quality_Women_Wholesale_Fox_Fur_Jacket_Silver_B_Fashion_High_Quality_Women_Wholesale_Fox_Fur_Jacket_Silver_B_432_5.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634132/products/Fall_2022_V-Neck_Contrast_Patchwork_Panel_Fashion_Women_s_Sk_Fall_2022_V-Neck_Contrast_Patchwork_Panel_Fashion_Women_s_Sk_159_71.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634131/products/Factory_wholesale_italian_women_real_fox_fur_coats_Factory_w_Factory_wholesale_italian_women_real_fox_fur_coats_313_5.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634131/products/Factory_wholesale_real_fox_fur_big_fur_collarfur_cloth_Facto_Factory_wholesale_real_fox_fur_big_fur_collarfur_cloth_144.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634128/products/Factory_manufacture_women_winter_autumn_long_clothes_ladies_Factory_manufacture_women_winter_autumn_long_clothes_ladies_121.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634127/products/Factory_sale_cheap_high_quality_baby_clothes_baby_clothes_se_Factory_sale_cheap_high_quality_baby_clothes_baby_clothes_se_173_75.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634106/products/Factory_Direct_Supply_Fashion_off_Shoulder_Mini_Pink_Ostrich_Factory_Direct_Supply_Fashion_off_Shoulder_Mini_Pink_Ostrich_302_5.png",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634106/products/Factory_Direct_Supply_Fashion_off_Shoulder_Mini_Pink_Ostrich_Factory_Direct_Supply_Fashion_off_Shoulder_Mini_Pink_Ostrich_302_5.png",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634101/products/Factory_Direct_Wholesale_Fur_Coat_Women_Real_Fox_Jacket_With_Factory_Direct_Wholesale_Fur_Coat_Women_Real_Fox_Jacket_With_623_75.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634094/products/FIVE_OCEANS_2022_canada_coats_hooded_warm_clothes_bomber_duc_FIVE_OCEANS_2022_canada_coats_hooded_warm_clothes_bomber_duc_220.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634094/products/FIVEOCEANS_2021_new_Hip_slim_hooded_zipper_Bombers_duck_down_FIVEOCEANS_2021_new_Hip_slim_hooded_zipper_Bombers_duck_down_120_99.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634094/products/FIVEOCEANS_2021_new_Hip_slim_hooded_zipper_Bombers_duck_down_FIVEOCEANS_2021_new_Hip_slim_hooded_zipper_Bombers_duck_down_120_99.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634093/products/FARAH_NAZ_New_York_Women_s_Self_Tie_Dress_Vision_In_Black_Fi_FARAH_NAZ_New_York_Women_s_Self_Tie_Dress_Vision_In_Black_Fi_269_5.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634088/products/Excellent_texture_real_rabbit_fur_long_coat_Charming_style_w_Excellent_texture_real_rabbit_fur_long_coat_Charming_style_w_343_2.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634088/products/Excellent_texture_real_rabbit_fur_long_coat_Charming_style_w_Excellent_texture_real_rabbit_fur_long_coat_Charming_style_w_343_2.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634082/products/Europe_Fashion_Chinchilla_Rex_Rabbit_Fur_Women_Long_Coat_Eur_Europe_Fashion_Chinchilla_Rex_Rabbit_Fur_Women_Long_Coat_360.png",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634077/products/Embroidery_Muslim_Kaftan_Hijab_Dress_Women_Butterfly_Abaya_D_Embroidery_Muslim_Kaftan_Hijab_Dress_Women_Butterfly_Abaya_D_534_38.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634066/products/Dry_Suit_Whitewater_Kayak_Drysuit_Waterproof_Rain_Suit_Race_Dry_Suit_Whitewater_Kayak_Drysuit_Waterproof_Rain_Suit_Race_198.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634056/products/Dress_two_piece_set_autumn_and_winter_2020_women_s_new_Europ_Dress_two_piece_set_autumn_and_winter_2020_women_s_new_Europ_220_23.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634020/products/Designer_Mens_Blue_Wedding_Suit_3_Piece_Summer_Beach_Suit_Fa_Designer_Mens_Blue_Wedding_Suit_3_Piece_Summer_Beach_Suit_Fa_141_9.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772633994/products/Designer_Colorful_Collars_Real_Fur_Jacket_Wholesale_Fur_Coat_Designer_Colorful_Collars_Real_Fur_Jacket_Wholesale_Fur_Coat_1250.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772633994/products/Designer_Colorful_Collars_Real_Fur_Jacket_Wholesale_Fur_Coat_Designer_Colorful_Collars_Real_Fur_Jacket_Wholesale_Fur_Coat_1250.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772633987/products/Deep_V-neck_slim_fishtail_toast_dress_2022_new_birthday_banq_Deep_V-neck_slim_fishtail_toast_dress_2022_new_birthday_banq_147_2.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772633965/products/DQ_85_Inch_4k_smart_tv_led_flat_TV_4K_android_smart_tcl_lg_s_DQ_85_Inch_4k_smart_tv_led_flat_TV_4K_android_smart_tcl_lg_s_781.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772633959/products/Customization_Unisex_Winter_Outdoor_Mountain_Wear_2_Pieces_S_Customization_Unisex_Winter_Outdoor_Mountain_Wear_2_Pieces_S_225.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772633959/products/Customization_Unisex_Winter_Outdoor_Mountain_Wear_2_Pieces_S_Customization_Unisex_Winter_Outdoor_Mountain_Wear_2_Pieces_S_225.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772633952/products/Custom_logo_designer_autumn_and_winter_large_men_s_and_women_Custom_logo_designer_autumn_and_winter_large_men_s_and_women_126_24.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772633944/products/Custom_Long_Sleeves_Fashion_Women_Fluffy_Fur_Jacket_Winter_R_Custom_Long_Sleeves_Fashion_Women_Fluffy_Fur_Jacket_Winter_R_448_5.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772633943/products/Custom_Natural_Animal_Elegant_Casual_dult_trimmed_Thick_Luxu_Custom_Natural_Animal_Elegant_Casual_dult_trimmed_Thick_Luxu_671.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772633941/products/Custom_High_Quality_Luxury_Wool_Navy_Blue_Formal_Business_Dr_Custom_High_Quality_Luxury_Wool_Navy_Blue_Formal_Business_Dr_336_6.png",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772633930/products/Cow_Leather_Men_Biker_Jacket_Cow_leather_biker_jacket_Cow_Le_Cow_Leather_Men_Biker_Jacket_Cow_leather_biker_jacket_164_99.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772633915/products/Classic_Flight_Jacket_Men_Aviator_Natural_Cow_Genuine_Leathe_Classic_Flight_Jacket_Men_Aviator_Natural_Cow_Genuine_Leathe_128_66.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772633915/products/Classic_Comfortable_Embroidery_Pattern_Flight_Bomber_Jacket_Classic_Comfortable_Embroidery_Pattern_Flight_Bomber_Jacket_206_7.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772633907/products/China_factory_high_quality_men_women_clothing_plus_size_jack_China_factory_high_quality_men_women_clothing_plus_size_jack_152_9.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772633904/products/China_Luxury_Genuine_Mink_Fur_Jackets_Black_Standing_Collar_China_Luxury_Genuine_Mink_Fur_Jackets_Black_Standing_Collar_506.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772633847/products/Champagne_evening_dress_graduation_light_luxury_niche_high-e_Champagne_evening_dress_graduation_light_luxury_niche_high-e_195_8.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772633847/products/Champagne_evening_dress_graduation_light_luxury_niche_high-e_Champagne_evening_dress_graduation_light_luxury_niche_high-e_195_8.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772633846/products/Cheap_High_Quality_Satisfaction_Guarantee_European_And_Ameri_Cheap_High_Quality_Satisfaction_Guarantee_European_And_Ameri_286.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772633837/products/Casual_Women_s_Fur_Jacket_Slim_Colorful_Optional_Cropped_Rea_Casual_Women_s_Fur_Jacket_Slim_Colorful_Optional_Cropped_Rea_950.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772633836/products/Cashmere_coat_2021_autumn_and_winter_new_double-faced_woolen_Cashmere_coat_2021_autumn_and_winter_new_double-faced_woolen_267_39.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772633832/products/Cashmere_Knitted_Pullover_Sweater_2022_7GG_Top_Fashion_Custo_Cashmere_Knitted_Pullover_Sweater_2022_7GG_Top_Fashion_Custo_115_5.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772633832/products/Cashmere_Knitted_Pullover_Sweater_2022_7GG_Top_Fashion_Custo_Cashmere_Knitted_Pullover_Sweater_2022_7GG_Top_Fashion_Custo_115_5.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772633275/products/Brand_AILOT_Women_s_Reversible_Winter_Down_Jacket_Coat_White_Brand_AILOT_Women_s_Reversible_Winter_Down_Jacket_Coat_White_291_01.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772633175/products/Best_Made_In_Italy_women_black_leather_double-breasted_coat_Best_Made_In_Italy_women_black_leather_double-breasted_coat_462_5.png",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772633162/products/Bespoke_Suits_Made_to_Measure_Suit_MTM_100_wool_men_Suit_Bespoke_Suits_Made_to_Measure_Suit_MTM_100_wool_men_Suit_438_9.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772633086/products/Autumnwinter_2023_new_fur_coat_fox_big_wool_collar_wool_doub_Autumnwinter_2023_new_fur_coat_fox_big_wool_collar_wool_doub_273_75.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772633082/products/BA2211_2023_Fashion_Women_Luxury_Handmade_Gorgeous_Rhineston_BA2211_2023_Fashion_Women_Luxury_Handmade_Gorgeous_Rhineston_140_4.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772633078/products/Autumn_winter_100_pure_cashmere_cozy_v_neck_sweater_pants_2_Autumn_winter_100_pure_cashmere_cozy_v_neck_sweater_pants_2_167_7.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772633078/products/Autumn_winter_100_pure_cashmere_cozy_v_neck_sweater_pants_2_Autumn_winter_100_pure_cashmere_cozy_v_neck_sweater_pants_2_167_7.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772633077/products/Autumn_Cross-border_WOOLEN_casual_lapel_cardigan_shirt_fashi_Autumn_Cross-border_WOOLEN_casual_lapel_cardigan_shirt_fashi_639_6.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772632978/products/A5979_Luxury_Wrap_Rhinestone_Good_Quality_Birthday_2022_Part_A5979_Luxury_Wrap_Rhinestone_Good_Quality_Birthday_2022_Part_123_2.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772632971/products/92216_2022_autumn_winter_women_new_fur_coat_fox_big_collar_92216_2022_autumn_winter_women_new_fur_coat_fox_big_collar_303_75.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772632971/products/92216_2022_autumn_winter_women_new_fur_coat_fox_big_collar_92216_2022_autumn_winter_women_new_fur_coat_fox_big_collar_303_75.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772632756/products/2023_Spring_Summer_Women_s_blouse_Fashion_Classic_Style_bead_2023_Spring_Summer_Women_s_blouse_Fashion_Classic_Style_bead_3250.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772632754/products/2023_New_Design_Custom_Winter_Women_Tops_Womens_Puffer_Coat_2023_New_Design_Custom_Winter_Women_Tops_Womens_Puffer_Coat_168.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772632754/products/2023_New_Design_Custom_Winter_Women_Tops_Womens_Puffer_Coat_2023_New_Design_Custom_Winter_Women_Tops_Womens_Puffer_Coat_168.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772632753/products/2023_New_Design_Kurtis_For_Women_Indian_Embroidery_Long_Slee_2023_New_Design_Kurtis_For_Women_Indian_Embroidery_Long_Slee_420.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772632753/products/2023_New_Design_Kurtis_For_Women_Indian_Embroidery_Long_Slee_2023_New_Design_Kurtis_For_Women_Indian_Embroidery_Long_Slee_420.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772632753/products/2023_New_Design_Kurtis_For_Women_Indian_Embroidery_Long_Slee_2023_New_Design_Kurtis_For_Women_Indian_Embroidery_Long_Slee_420.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772632753/products/2023_New_Design_Kurtis_For_Women_Indian_Embroidery_Long_Slee_2023_New_Design_Kurtis_For_Women_Indian_Embroidery_Long_Slee_420.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772632707/products/2022_black_cool_Denim_tassels_fashion_sexy_long_jacket_camou_2022_black_cool_Denim_tassels_fashion_sexy_long_jacket_camou_119_9.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772632715/products/2022_new_gray_Luoma_velvet_coat_Women_s_Mid-length_high-end_2022_new_gray_Luoma_velvet_coat_Women_s_Mid-length_high-end_369_51.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772632718/products/2022_winter_new_fashion_trend_imported_whole_skin_fox_fur_gr_2022_winter_new_fashion_trend_imported_whole_skin_fox_fur_gr_735.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772632703/products/2022_Women_s_Mink_Fur_parka_with_Raccoon_Collar_long_Fur_coa_2022_Women_s_Mink_Fur_parka_with_Raccoon_Collar_long_Fur_coa_373_75.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772632703/products/2022_Women_s_Mink_Fur_parka_with_Raccoon_Collar_long_Fur_coa_2022_Women_s_Mink_Fur_parka_with_Raccoon_Collar_long_Fur_coa_373_75.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772632701/products/2022_Wool_Coat_Women_Luxury_Natural_Fox_Fur_Vest_and_Cashmer_2022_Wool_Coat_Women_Luxury_Natural_Fox_Fur_Vest_and_Cashmer_234.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772632262/products/2022_Silver_Rhinestones_Spandex_Dress_Women_s_Birthday_Celeb_2022_Silver_Rhinestones_Spandex_Dress_Women_s_Birthday_Celeb_144.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772632262/products/2022_Silver_Rhinestones_Spandex_Dress_Women_s_Birthday_Celeb_2022_Silver_Rhinestones_Spandex_Dress_Women_s_Birthday_Celeb_144.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772632247/products/2022_New_Design_High_Quality_Woolen_Suit_Men_s_Business_Form_2022_New_Design_High_Quality_Woolen_Suit_Men_s_Business_Form_202_39.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772632246/products/2022_New_Arrivals_Winter_Clothing_Waist_Adjustable_Long_Puff_2022_New_Arrivals_Winter_Clothing_Waist_Adjustable_Long_Puff_158_4.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772632233/products/2022_Luxury_Embroidery_Clothing_Summer_Bohemian_Explosive_Pl_2022_Luxury_Embroidery_Clothing_Summer_Bohemian_Explosive_Pl_975.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772632230/products/2022_Hot_Sale_White_Summer_Wedding_Dress_Strapless_Women_ele_2022_Hot_Sale_White_Summer_Wedding_Dress_Strapless_Women_ele_120.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772632229/products/2022_Hot_Sell_Factory_Multi-function_Auto_Folding_One_Hand_S_2022_Hot_Sell_Factory_Multi-function_Auto_Folding_One_Hand_S_88.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772632219/products/2021_new_whole_skin_fox_fur_collar_big_fur_collar_woolen_kni_2021_new_whole_skin_fox_fur_collar_big_fur_collar_woolen_kni_394_9.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772632221/products/2021_spring_new_men_s_wedding_dress_performance_MC_presides_2021_spring_new_men_s_wedding_dress_performance_MC_presides_161_48.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772632219/products/2021_winter_fashion_parka_coat_real_raccoon_fur_collar_hoode_2021_winter_fashion_parka_coat_real_raccoon_fur_collar_hoode_373_75.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772632209/products/2021_New_Style_Wholesale_Product_Man_Leather_Jacket_Luxury_2_2021_New_Style_Wholesale_Product_Man_Leather_Jacket_Luxury_2_2021_New_Style_Wholesale_Product_Man_Leather_Jacket_Luxury_778_7.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772632129/products/100_Made_In_Italy_High_Quality_Office_Lady_Spring_Summer_2_100_Made_In_Italy_High_Quality_Office_Lady_Spring_Summer_2_405_9.png",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772365024/products/Xinzhilian_Colombia_Private_Label_Green_Cropped_270Gsm_Scrub_Xinzhilian_Colombia_Private_Label_Green_Cropped_270Gsm_Scrub_155_21_shonvq.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772364989/products/Women_s_Casual_Harem_Pants_Spring_Fashion_Loose_Ankle-length_Women_s_Casual_Harem_Pants_Spring_Fashion_Loose_Ankle-length_12_86_bl8rkx.jpg",
+
+  /* Additional URLs user requested to add */
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635812/products/woman_coat_fur_Wholesale_Genuine_Women_Fox_Fur_Cuff_Long_Bel_woman_coat_fur_Wholesale_Genuine_Women_Fox_Fur_Cuff_Long_Bel_308.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635813/products/winter_double-faced_woolen_goods_water_ripple_short_women_s_winter_double-faced_woolen_goods_water_ripple_short_women_s_498.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635812/products/women_s_winter_warm_thick_real_raccoon_fur_coat_ladies_natur_women_s_winter_warm_thick_real_raccoon_fur_coat_ladies_natur_390.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635775/products/spark_sportswear_women_plus_size_sports_bra_tights_leggings_spark_sportswear_women_plus_size_sports_bra_tights_leggings_36_91.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635771/products/pure_cashmere_winter_oversize_women_s_sweater_rolled_collar_pure_cashmere_winter_oversize_women_s_sweater_rolled_collar_169_94.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635501/products/Wedding_Dress_Fashion_Women_White_Red_Luxury_Sequin_Lace_Sle_Wedding_Dress_Fashion_Women_White_Red_Luxury_Sequin_Lace_Sle_371_22.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635497/products/Warm_Jacket_Light_Business_Men_s_Cold-proof_Aerogel_Clothing_Warm_Jacket_Light_Business_Men_s_Cold-proof_Aerogel_Clothing_141_35.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635440/products/Unique_Design_Popular_custom_men_suit_Size_can_be_customized_Unique_Design_Popular_custom_men_suit_Size_can_be_customized_379_5.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635426/products/Two_Piece_Full_Motorbike_Clothing_Motorcycle_Racing_Suit_Lea_Two_Piece_Full_Motorbike_Clothing_Motorcycle_Racing_Suit_Lea_385.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635414/products/Top_quality_luxury_ladies_Imported_fox_fur_longcoat_splicing_Top_quality_luxury_ladies_Imported_fox_fur_longcoat_splicing_1062_5.png",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635414/products/Top_grade_suit_100_wool_men_s_wedding_bridegroom_suit_busin_Top_grade_suit_100_wool_men_s_wedding_bridegroom_suit_busin_206_8.png",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635413/products/Top_Sale_Fashion_Warm_Winter_Jacket_for_Women_Thicken_Soft_H_Top_Sale_Fashion_Warm_Winter_Jacket_for_Women_Thicken_Soft_H_561.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635410/products/Top_Quality_Black_Men_Fashion_Leather_Jacket_Top_Quality_Bla_Top_Quality_Black_Men_Fashion_Leather_Jacket_247_5.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635405/products/Top-end_4_Wheels_inline_speed_Skate_high-grade_hand-made_ska_Top-end_4_Wheels_inline_speed_Skate_high-grade_hand-made_ska_337_5.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635401/products/Top-Quality_3-Button_Gray_Wrinkle-Free_Men_s_Fashion_Busines_Top-Quality_3-Button_Gray_Wrinkle-Free_Men_s_Fashion_Busines_400.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635384/products/Texture_good_soft_sheepskin_leather_garment_women_s_short_se_Texture_good_soft_sheepskin_leather_garment_women_s_short_se_258_75.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635376/products/T_shirt_For_Men_Customized_Design_Stand_Collar_Long_Sleeve_1_T_shirt_For_Men_Customized_Design_Stand_Collar_Long_Sleeve_1_9100.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635360/products/Summer_Motorcycle_Riding_Jacket_Mesh_Breathable_CE_Armored_A_Summer_Motorcycle_Riding_Jacket_Mesh_Breathable_CE_Armored_A_198.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635358/products/Summer_2022_Ladies_Elegant_Sleeveless_Pencil_With_Leopard_Pr_Summer_2022_Ladies_Elegant_Sleeveless_Pencil_With_Leopard_Pr_269_38.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635358/products/Super_September_Shiny_Chainmail_Fabric_Metal_Sequin_Dress_Su_Super_September_Shiny_Chainmail_Fabric_Metal_Sequin_Dress_230.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635358/products/Summer_ladies_fringed_luxury_noble_dresses_temperament_fisht_Summer_ladies_fringed_luxury_noble_dresses_temperament_fisht_352.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635346/products/Stock_Quick_Delivery_High_quality_Canada_style_Goose_down_Re_Stock_Quick_Delivery_High_quality_Canada_style_Goose_down_Re_583.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635345/products/Stormtech_Men_s_Atmosphere_System_Jacket_Navy_Waterproof_Bre_Stormtech_Men_s_Atmosphere_System_Jacket_Navy_Waterproof_Bre_203_5.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635339/products/Spring_Summer_Leather_Jacket_for_Woman_Custom_Leather_Jacket_Spring_Summer_Leather_Jacket_for_Woman_Custom_Leather_Jacket_186_25.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635340/products/Star_fashion_design_popular_women_Real_Mongolian_lamb_fur_co_Star_fashion_design_popular_women_Real_Mongolian_lamb_fur_co_410.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635330/products/Spring_Ladies_Genuine_Sheepskin_Belt_Coat_With_Fox_Fur_Colla_Spring_Ladies_Genuine_Sheepskin_Belt_Coat_With_Fox_Fur_Colla_319.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635328/products/Spring_Autumn_European_And_American_Trend_Loose_Double_Breas_Spring_Autumn_European_And_American_Trend_Loose_Double_Breas_154.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635323/products/Special_Brown_Men_Casual_High_Quality_Men_s_Coat_Biker_Real_Special_Brown_Men_Casual_High_Quality_Men_s_Coat_Biker_Real_248_75.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635318/products/Soft_fur_coat_warm_winter_jacket_women_fox_fur_overcoat_with_Soft_fur_coat_warm_winter_jacket_women_fox_fur_overcoat_with_333_5.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635281/products/Royal_Blue_Mirror_High_Split_Prom_Dresses_2022_Vestido_De_Ga_Royal_Blue_Mirror_High_Split_Prom_Dresses_2022_Vestido_De_Ga_186_86.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635276/products/Russian_Style_Real_Silver_Fox_Fur_Coat_Natural_Fur_Jacket_Fo_Russian_Style_Real_Silver_Fox_Fur_Coat_Natural_Fur_Jacket_Fo_605.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635253/products/Red_wedding_evening_dress_prom_dress_ball_gown_sweetheart_qu_Red_wedding_evening_dress_prom_dress_ball_gown_sweetheart_qu_165.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635247/products/Red_elegant_Sheer_back_Long_Satin_perspective_Prom_Dress_202_Red_elegant_Sheer_back_Long_Satin_perspective_Prom_Dress_202_153_75.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635246/products/Robe_De_Soirees_Elegant_Crystal_Sequins_Puff_Sleeves_Beaded_Robe_De_Soirees_Elegant_Crystal_Sequins_Puff_Sleeves_Beaded_302_9.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635239/products/Real_Fox_Fur_Coat_Women_2022_Autumn_Winter_Knitted_Cardigan_Real_Fox_Fur_Coat_Women_2022_Autumn_Winter_Knitted_Cardigan_304.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635239/products/Red_Lace_Dress_Women_Patchwork_Slash_Neck_Short_Sleeve_Sashe_Red_Lace_Dress_Women_Patchwork_Slash_Neck_Short_Sleeve_Sashe_1400.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635239/products/Real_Fox_Fur_Jackets_For_Men_Winter_Outerwear_Hooded_Men_Fur_Real_Fox_Fur_Jackets_For_Men_Winter_Outerwear_Hooded_Men_Fur_837.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635237/products/Real_Fox_Fur_Coat_Girl_s_Outware_Real_Fox_Fur_Winter_Coat_Re_Real_Fox_Fur_Coat_Girl_s_Outware_Real_Fox_Fur_Winter_Coat_231_25.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635236/products/Real_Sheepskin_Business_jacket_middle_age_men_Spring_Genuine_Real_Sheepskin_Business_jacket_middle_age_men_Spring_Genuine_185_68.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635225/products/Ready_for_ship_women_s_2021_new_arrival_winter_light_weight_Ready_for_ship_women_s_2021_new_arrival_winter_light_weight_314_6.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635225/products/Real_Fox_Fur_Coat_Genuine_Fox_Fur_Famale_Jacket_Outwear_Clot_Real_Fox_Fur_Coat_Genuine_Fox_Fur_Famale_Jacket_Outwear_Clot_258_75.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635221/products/Ready_for_ship_new_arrival_fashion_design_spring_autumn_wi_Ready_for_ship_new_arrival_fashion_design_spring_autumn_wi_240_9.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635221/products/Ready_for_ship_men_s_2021_high_quality_fashion_design_winter_Ready_for_ship_men_s_2021_high_quality_fashion_design_winter_269_5.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635200/products/Quality_Guaranteed_Modest_Coats_Girls_Long_Coat_Design_Winte_Quality_Guaranteed_Modest_Coats_Girls_Long_Coat_Design_Winte_912_5.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635188/products/QIUCHEN-_QC22078_2022_Winter_Customizable_8XL_Women_Lady_Rac_QIUCHEN-_QC22078_2022_Winter_Customizable_8XL_Women_Lady_Rac_264_5.png",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635181/products/Pudi_women_winter_real_fur_coat_jacket_with_mink_fur_collar_Pudi_women_winter_real_fur_coat_jacket_with_mink_fur_collar_411_25.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635168/products/Pretty_Steps_2020_Elegant_Fashion_Winter_Warm_Ladies_Clothes_Pretty_Steps_2020_Elegant_Fashion_Winter_Warm_Ladies_Clothes_160_38.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635158/products/Premium_quality_and_service_custom_bespoke_suit_Fast_deliver_Premium_quality_and_service_custom_bespoke_suit_Fast_deliver_218_4.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635150/products/Popular_short_length_100_real_mink_coats_for_woman_genuine_Popular_short_length_100_real_mink_coats_for_woman_genuine_648_7.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635145/products/Popular_Grid_Fox_Fur_Coat_Raccoon_Fur_Coat_100_Real_Fox_Fur_Popular_Grid_Fox_Fur_Coat_Raccoon_Fur_Coat_100_Real_Fox_Fur_555_5.png",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635144/products/Pink_cashmere_coat_for_women_2022_new_winter_thickened_high-_Pink_cashmere_coat_for_women_2022_new_winter_thickened_high-_363_35.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635143/products/Popular_Fashionable_Winter_Genuine_Natural_Style_Fox_Fur_Coa_Popular_Fashionable_Winter_Genuine_Natural_Style_Fox_Fur_Coa_292_6.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635129/products/PDEP_plus_size_5XL_military_mens_pilot_jacket_and_coat_brown_PDEP_plus_size_5XL_military_mens_pilot_jacket_and_coat_brown_148_5.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635129/products/PDEP_2021_plus_size_4XL_black_genuine_leather_jacket_for_men_PDEP_2021_plus_size_4XL_black_genuine_leather_jacket_for_men_154.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635128/products/PVC_Raincoat_Yellow_Water_Proof_Heavy_Duty_Rain_Coat_For_Adu_PVC_Raincoat_Yellow_Water_Proof_Heavy_Duty_Rain_Coat_For_Adu_260.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635122/products/Original_sheep_shearling_fur_men_s_fur_coat_winter_large_men_Original_sheep_shearling_fur_men_s_fur_coat_winter_large_men_341.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635119/products/Oversized_Winter_Warm_Real_Fox_Fur_Collar_Black_Down_Coat_Wo_Oversized_Winter_Warm_Real_Fox_Fur_Collar_Black_Down_Coat_Wo_192.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635090/products/Orange_Woolen_Fashion_Men_Suit_Jacket_Slim_FitFormal_Daily_M_Orange_Woolen_Fashion_Men_Suit_Jacket_Slim_FitFormal_Daily_M_174_24.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635052/products/Occasion_Wear_New_Indian_Collection_For_Women_Short_Sleeve_F_Occasion_Wear_New_Indian_Collection_For_Women_Short_Sleeve_F_520.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635043/products/OEM_Services_Handmade_100_Italian_Real_Leather_Jacket_Made_OEM_Services_Handmade_100_Italian_Real_Leather_Jacket_Made_287_5.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635043/products/OFTBUY_2021_New_Winter_Down_Jacket_Women_Coat_Double_Face_Fu_OFTBUY_2021_New_Winter_Down_Jacket_Women_Coat_Double_Face_Fu_283_75.png",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635039/products/OEM_Customize_Brand_Adult_Mens_outdoor_Ski_Sport_Jacket_Snow_OEM_Customize_Brand_Adult_Mens_outdoor_Ski_Sport_Jacket_Snow_120_65.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635041/products/OEM_Wholesale_Clothing_Winter_Custom_Windproof_Fabric_Shell_OEM_Wholesale_Clothing_Winter_Custom_Windproof_Fabric_Shell_187.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635038/products/OEM_High_Quality_Women_Fashion_Leather_Jackets_Original_Shee_OEM_High_Quality_Women_Fashion_Leather_Jackets_Original_Shee_294_25.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635031/products/OEMODM_High_Quality_Winter_Elegant_Women_Brown_Waist_Long_Wo_OEMODM_High_Quality_Winter_Elegant_Women_Brown_Waist_Long_Wo_220.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635028/products/Nice_Quality_Winter_Women_Warm_Thickened_Outer_Wear_Windproo_Nice_Quality_Winter_Women_Warm_Thickened_Outer_Wear_Windproo_231_25.png",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635027/products/Nocance_Novance_Evening_Dresses_2023_Luxury_Dresses_Women_El_Nocance_Novance_Evening_Dresses_2023_Luxury_Dresses_Women_El_132.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635026/products/Nice_quality_fashion_design_red_man_leather_motor_biker_clot_Nice_quality_fashion_design_red_man_leather_motor_biker_clot_110.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635014/products/New_colorful_custom_women_genuine_leather_coat_long_leather_New_colorful_custom_women_genuine_leather_coat_long_leather_313_5.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635012/products/New_three-in-one_down_jacket_men_s_waterproof_padded_ski_tra_New_three-in-one_down_jacket_men_s_waterproof_padded_ski_tra_165.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772635006/products/New_arrival_ladies_winter_mink_fur_coat_long_women_natural_m_New_arrival_ladies_winter_mink_fur_coat_long_women_natural_m_1785.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634997/products/New_Winter_Coat_Jacket_Women_Fur_Coat_Short_Style_Genuine_Fo_New_Winter_Coat_Jacket_Women_Fur_Coat_Short_Style_Genuine_Fo_218_9.png",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634991/products/New_Trends_Jacket_Women_Wool_Coat_Belt_Long_Cashmere_And_Fur_New_Trends_Jacket_Women_Wool_Coat_Belt_Long_Cashmere_And_Fur_198.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634985/products/New_Style_Double-sided_Wear_100_Slik_Lining_Reversible_Jack_New_Style_Double-sided_Wear_100_Slik_Lining_Reversible_Jack_287_5.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634950/products/New_Design_Reversible_Jacket_Fashion_Warm_Clothes_Women_Wint_New_Design_Reversible_Jacket_Fashion_Warm_Clothes_Women_Wint_385.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634949/products/New_Elegant_fox_fur_fur_coat_with_hood_coat_winter_real_fox_New_Elegant_fox_fur_fur_coat_with_hood_coat_winter_real_fox_448_75.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634941/products/New_Design_Fur_Winter_Women_Coat_Top_Quality_Fabric_Reversib_New_Design_Fur_Winter_Women_Coat_Top_Quality_Fabric_Reversib_214_5.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634941/products/New_Causal_Slim_Neutral_Style_Double_Face_Lamb_Shearling_Wom_New_Causal_Slim_Neutral_Style_Double_Face_Lamb_Shearling_Wom_336_25.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634940/products/New_Design_Custom_Business_Blazer_Formal_Suit_Fashion_Weddin_New_Design_Custom_Business_Blazer_Formal_Suit_Fashion_Weddin_118_8.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634934/products/New_Arrival_2022_Hand_Embroidery_Top_For_Women_Short_Sleeve_New_Arrival_2022_Hand_Embroidery_Top_For_Women_Short_Sleeve_440.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634934/products/New_Arrival_Two_Piece_Coat_Pant_Women_Office_Suit_Set_For_Bu_New_Arrival_Two_Piece_Coat_Pant_Women_Office_Suit_Set_For_Bu_156.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634920/products/NOVANCE_2022_new_arrivals_Sparkly_Diamond_Pearl_Dress_Long_S_NOVANCE_2022_new_arrivals_Sparkly_Diamond_Pearl_Dress_Long_S_158_72.jpg",
+  "https://res.cloudinary.com/dycytqdfj/image/upload/v1772634922/products/NOVANCE_Y2352_Spring_2022_Womens_Clothing_Crystal_Long_Diamo_NOVANCE_Y2352_Spring_2022_Womens_Clothing_Crystal_Long_Diamo_156.jpg"
+];
+
+/* Shuffle the URLs at runtime so pages don't show grouped identical products */
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/* Build product objects with name and a short description */
+const productsFromUrls = (urls) =>
+  urls.map((url, idx) => {
+    const name = friendlyNameFromUrl(url);
+    const lower = name.toLowerCase();
+    const desc = (() => {
+      if (lower.includes("boot")) return "Durable and stylish — great for outdoor and winter wear.";
+      if (lower.includes("sneaker") || lower.includes("sneakers") || lower.includes("nike") || lower.includes("yeezy"))
+        return "Comfortable sneaker for everyday wear and sports.";
+      if (lower.includes("slipper") || lower.includes("loafer")) return "Casual and comfortable slip-on — great for home and casual outings.";
+      if (lower.includes("oxford") || lower.includes("leather")) return "Premium leather craftsmanship for formal occasions.";
+      if (lower.includes("heel") || lower.includes("pump")) return "Elevate your outfit with these stylish heels.";
+      if (lower.includes("ice skate") || lower.includes("skate")) return "Specialized skate shoes for performance and style.";
+      return "High quality shoes with excellent comfort and design.";
+    })();
+    return { id: idx + 1, name, desc, img: url };
+  });
+
+export default function Shoes() {
+  // Shuffle once on component mount (keeps behavior same as Apparel & Accessories)
+  const shuffledUrls = useMemo(() => shuffleArray(productUrls), []);
+  const products = useMemo(() => productsFromUrls(shuffledUrls), [shuffledUrls]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 8; // exactly 8 products per page
+  const total = products.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  const pageProducts = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return products.slice(start, start + pageSize);
+  }, [currentPage, products]);
+
+  const goTo = (page) => {
+    const p = Math.max(1, Math.min(totalPages, page));
+    setCurrentPage(p);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const pageNumbers = useMemo(() => {
+    const maxButtons = 7;
+    if (totalPages <= maxButtons) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    const half = Math.floor(maxButtons / 2);
+    let start = Math.max(1, currentPage - half);
+    let end = start + maxButtons - 1;
+    if (end > totalPages) {
+      end = totalPages;
+      start = end - maxButtons + 1;
+    }
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  }, [currentPage, totalPages]);
+
+  return (
+    <div className="shoes-page">
+      {/* Inject a small style override so we don't have to change Shoes.css */}
+      <style>{`
+        /* Ensure hero image never grows past a reasonable height on large screens */
+        .shoes-hero .shoes-hero-left .shoes-hero-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover; /* keep visual fill but constrained by max-height below */
+          max-height: 60vh; /* default cap relative to viewport */
+        }
+
+        /* On larger desktop screens clamp to a fixed pixel max so it doesn't push layout */
+        @media (min-width: 1200px) {
+          .shoes-hero .shoes-hero-left .shoes-hero-img {
+            max-height: 520px; /* adjust as needed to match the marked line */
+          }
+        }
+
+        /* Make product images fit into their product card boxes without increasing card size.
+           We use contain so the full image is visible and not cropped; the card size remains controlled by existing CSS. */
+        .products-grid .product-card .product-media img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          display: block;
+        }
+
+        /* Do not modify the small mini thumbnails (mini-1, mini-2) as requested - they remain controlled by Shoes.css */
+      `}</style>
+
+      {/* HERO */}
+      <section
+        className="shoes-hero"
+        role="region"
+        aria-label="Shoes hero"
+      >
+        <div className="shoes-hero-inner">
+          <div className="shoes-hero-left" aria-hidden="true">
+            {/* Use imported Shoes.png as a contained <img> so it stays inside the left card */}
+            <img
+              src={ShoesHero}
+              alt="Shoes hero"
+              className="shoes-hero-img"
+              // Inline fallback / extra safety to cap height and preserve fit if global CSS overrides are present
+              style={{ maxHeight: "60vh", width: "100%", objectFit: "cover" }}
+            />
+          </div>
+
+          <div className="shoes-hero-right">
+            <div className="shoes-hero-right-inner">
+              <div className="shoes-kicker"> APPAREL </div>
+              <h1 className="shoes-hero-title">Authentic apparel from the best brands.</h1>
+              <p className="shoes-hero-sub">Updated weekly with new flash sales from some of the world's best brands.</p>
+            </div>
+
+            <div className="shoes-hero-mini">
+              {/* small thumbnails on the bottom-right as seen in screenshot */}
+              <img src={pageProducts[0]?.img || ""} alt="" className="mini-1" />
+              <img src={pageProducts[1]?.img || ""} alt="" className="mini-2" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* product count and sort row */}
+      <div className="shoes-toolbar">
+        <div className="shoes-count">{total} Products Found</div>
+        <div className="shoes-sort">
+          <label htmlFor="sort">Sort by</label>
+          <select id="sort" name="sort" defaultValue="recommended">
+            <option value="recommended">Recommended</option>
+            <option value="new">Newest</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+          </select>
+        </div>
+      </div>
+
+      {/* PRODUCTS GRID */}
+      <main className="shoes-products" role="main">
+        <div className="products-grid" aria-live="polite">
+          {pageProducts.map((p) => (
+            <a
+              key={p.id}
+              href={`/shoes/${p.id}`}
+              className="product-card"
+              title={`${p.name} — ${p.desc}`}
+              rel="noopener"
+            >
+              <div className="product-media">
+                {/* Product images: use object-fit contain so they don't overflow or get cropped;
+                    card sizes remain controlled by Shoes.css */}
+                <img
+                  src={p.img}
+                  alt={p.name}
+                  loading="lazy"
+                  style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
+                />
+              </div>
+              <div className="product-body">
+                <h3 className="product-name">{p.name}</h3>
+                <p className="product-desc">{p.desc}</p>
+                <div className="product-actions">
+                  <button type="button" className="btn-quick">Quick View</button>
+                </div>
+              </div>
+            </a>
+          ))}
+        </div>
+
+        {/* PAGINATION */}
+        <nav className="shoes-pagination" aria-label="Pagination">
+          <button onClick={() => goTo(currentPage - 1)} disabled={currentPage === 1} className="pg-btn">
+            Prev
+          </button>
+
+          {pageNumbers[0] > 1 && (
+            <>
+              <button onClick={() => goTo(1)} className="pg-btn">1</button>
+              {pageNumbers[0] > 2 && <span className="pg-ellipsis">…</span>}
+            </>
+          )}
+
+          {pageNumbers.map((n) => (
+            <button
+              key={n}
+              onClick={() => goTo(n)}
+              className={`pg-btn ${n === currentPage ? "active" : ""}`}
+              aria-current={n === currentPage ? "page" : undefined}
+            >
+              {n}
+            </button>
+          ))}
+
+          {pageNumbers[pageNumbers.length - 1] < totalPages && (
+            <>
+              {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && <span className="pg-ellipsis">…</span>}
+              <button onClick={() => goTo(totalPages)} className="pg-btn">{totalPages}</button>
+            </>
+          )}
+
+          <button onClick={() => goTo(currentPage + 1)} disabled={currentPage === totalPages} className="pg-btn">
+            Next
+          </button>
+        </nav>
+      </main>
+    </div>
+  );
+}

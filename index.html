@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Critical viewport for responsive layout and iPhone safe area -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- Prevent iOS turning phone numbers into links / auto-zoom on inputs -->
+    <meta name="format-detection" content="telephone=no" />
+    <!-- Browser UI color on Android (adjust to match your brand if you want) -->
+    <meta name="theme-color" content="#ffffff" />
+    <!-- iOS web app settings (harmless to include; no extra files required) -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
+    <title>SequenceCommerce</title>
+  </head>
+  <!-- add the app-shell class so safe-area padding is applied -->
+  <body class="app-shell bg-gray-100 text-gray-900">
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

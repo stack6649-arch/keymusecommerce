@@ -1,0 +1,65 @@
+/* ===== SIDEBAR ===== */
+.dashboard-sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 0;
+  background: rgba(0, 0, 0, 0.5);
+  overflow-x: hidden;
+  transition: 0.3s;
+  z-index: 999;
+}
+
+.dashboard-sidebar-overlay.open {
+  width: 100%;
+}
+
+.dashboard-sidebar {
+  background: #fff;
+  width: 75%; /* sidebar now covers 75% of screen */
+  max-width: 400px; /* optional: prevent it from being too huge on wide screens */
+  height: 100%;
+  padding: 1rem;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-sidebar-close {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  margin-bottom: 1rem;
+}
+
+.dashboard-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.dashboard-sidebar-nav a {
+  text-decoration: none;
+  color: #333;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.dashboard-sidebar-nav a:hover {
+  color: #007bff;
+}
+
+/* ===== MY ACCOUNT special styling ===== */
+.dashboard-sidebar-account {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dashboard-sidebar-account-text {
+  color: #000 !important; /* always black */
+  font-weight: 500;
+}
+
+.dashboard-sidebar-account:hover .dashboard-sidebar-account-text {
+  color: #000 !important; /* stays black even on hover */
+}

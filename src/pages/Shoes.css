@@ -1,0 +1,555 @@
+/* ========================================================================
+   Shoes.css
+   - Updated to precisely match the original platform screenshot and your
+     latest requests:
+     * Product images always fill & crop their card area (zoomed/center-cropped).
+     * Thumbnails sized and positioned to match the marked boxes on desktop
+       and enlarged appropriately on mobile.
+     * Hero (left big image) forced to use consistent Shoes-style cropping
+       and sizing across all categories; category title made larger/bolder on PC.
+     * Minor spacing adjustments so title/subtitle and thumbnails visually
+       fit inside the right panel boxes shown in screenshots.
+   - I did not remove or reorder other sections, only adjusted rules and
+     added targeted overrides to achieve the requested behavior.
+   ======================================================================== */
+
+/* Page root */
+.shoes-page {
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  color: #071e2f;
+  background: #fff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ------------------------------------------------------------------------
+   Remove the dark return-strip + sidebar overlay when Shoes page is present.
+   - Primary: use :has() to scope to .layout-container that contains .shoes-page.
+   - Fallback: direct selectors (broader). If you want to avoid the fallback
+     remove the fallback block below.
+   ------------------------------------------------------------------------ */
+.layout-container:has(.shoes-page) > div[style*="linear-gradient(180deg,#071e2f"],
+.layout-container:has(.shoes-page) .dashboard-sidebar-overlay {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Fallback (broader) - remove this block if you prefer only the :has() rule */
+.layout-container > div[style*="linear-gradient(180deg,#071e2f"],
+.dashboard-sidebar-overlay {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* ------------------------------------------------------------------------
+   HERO: Left large image (background) + Right info panel
+   ------------------------------------------------------------------------ */
+.shoes-hero {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  background: transparent;
+}
+
+/* outer inner grid: left visual, right panel */
+.shoes-hero-inner {
+  display: grid;
+  grid-template-columns: 1fr 420px; /* left visual, right fixed info column */
+  align-items: stretch;
+  gap: 0;
+  max-width: 1400px;
+  margin: 0 auto;
+  min-height: 520px;
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* left column shows the hero image */
+.shoes-hero-left {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  min-height: 520px;
+  display: block;
+}
+
+/* Hero image element: fill left card and crop to focus area
+   Use center cropping so the important part of the image is always visible. */
+.shoes-hero-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center !important; /* force center crop for consistent look */
+  -o-object-fit: cover;
+  -o-object-position: center center;
+  pointer-events: none;
+  user-select: none;
+  will-change: transform, object-position;
+  transform-origin: center center;
+}
+
+/* remove any leftover pseudo-element fade that would cover the image */
+.shoes-hero-left::after,
+.shoes-hero-left::before {
+  display: none !important;
+  content: none !important;
+}
+
+/* right panel */
+.shoes-hero-right {
+  background: #efe9e4; /* beige panel to the right */
+  padding: 60px 48px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  position: relative;
+  min-height: 520px; /* ensure same height as left hero for the boxed look */
+}
+
+/* group the top content so title/subtitle remain inside the top red-box area */
+.shoes-hero-right-inner {
+  display: block;
+  margin-bottom: 20px;
+}
+
+/* kicker + title area */
+.shoes-kicker {
+  color: #0b56b3;
+  font-weight: 900;
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.shoes-hero-title {
+  font-size: 28px;
+  line-height: 1.05;
+  margin: 0 0 10px 0;
+  color: #0b2b4a;
+  font-weight: 900;
+}
+
+/* subtitle should fit in its box above thumbnails */
+.shoes-hero-sub {
+  margin: 0 0 6px 0;
+  font-size: 14px;
+  color: #666;
+  max-width: 100%; /* allow it to span the right panel width */
+}
+
+/* small thumbnails bottom-right of the beige panel
+   These are sized carefully to match the boxes you marked. */
+.shoes-hero-mini {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  position: absolute;
+  bottom: 18px;
+  right: 18px;
+  z-index: 3;
+  pointer-events: auto;
+}
+
+.shoes-hero-mini img {
+  width: 180px;   /* desktop thumbnail size to match marked boxes */
+  height: 180px;  /* make them square so they fill the small boxes visually */
+  object-fit: cover;
+  object-position: center center;
+  border-radius: 6px;
+  border: 6px solid rgba(255,255,255,0.95);
+  box-shadow: 0 6px 18px rgba(11,43,74,0.08);
+  background: #fff;
+  display: block;
+}
+
+/* smaller white clickable tile behind thumbnails (if thumbnail wrapped in anchor) */
+.shoes-hero-mini a {
+  display: inline-block;
+  width: auto;
+  height: auto;
+}
+
+/* Ensure keyboard focus visible */
+.shoes-hero-mini img:focus,
+.shoes-hero-mini img:active {
+  outline: 3px solid rgba(11,86,179,0.12);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------------------
+   Toolbar (product count + sort)
+   ------------------------------------------------------------------------ */
+.shoes-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1400px;
+  margin: 22px auto 8px;
+  padding: 0 12px;
+  color: #071e2f;
+  font-weight: 700;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+
+.shoes-sort {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-weight: 600;
+  color: #333;
+}
+.shoes-sort label { font-weight: 700; font-size: 13px; }
+.shoes-sort select {
+  padding: 6px 8px;
+  border: 1px solid #e6e6e6;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 13px;
+}
+
+/* ------------------------------------------------------------------------
+   PRODUCT GRID - images MUST fill their card area; zoom-in applied when needed
+   ------------------------------------------------------------------------ */
+.products-grid {
+  max-width: 1400px;
+  margin: 18px auto 34px;
+  padding: 0 12px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* default desktop: 4 columns */
+  gap: 24px;
+  box-sizing: border-box;
+}
+
+/* product card baseline */
+.product-card {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid #eef0f2;
+  transition: box-shadow 0.15s ease, transform 0.12s ease;
+  text-decoration: none;
+  color: inherit;
+  min-height: 360px;
+  padding: 14px;
+  box-sizing: border-box;
+  overflow: hidden; /* ensure inner image cropping can't escape */
+}
+
+/* hover lifts and subtle shadow */
+.product-card:hover {
+  box-shadow: 0 8px 30px rgba(11,43,74,0.06);
+  transform: translateY(-4px);
+}
+
+/* image area: force image to fill the card's image area for big visuals */
+.product-media {
+  background: #fff;
+  height: 220px; /* desktop */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-bottom: 1px solid #f3f3f3;
+  margin-bottom: 12px;
+  position: relative;
+}
+
+/* IMPORTANT: force the img to always fill the box, crop centred,
+   and slightly zoom so very tall/long source images appear consistent. */
+.product-media img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;        /* ensure the image fills and is cropped */
+  object-position: center center !important; /* always center-crop */
+  transform-origin: center center;
+  transform: scale(1.06); /* slight zoom so images that are 'too big' are cropped and appear similar */
+  transition: transform 200ms ease;
+  display: block;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+/* On hover we can keep same crop but reduce motion; avoid reflow */
+.product-card:hover .product-media img {
+  transform: scale(1.08);
+}
+
+/* body area: title, desc, action */
+.product-body {
+  padding: 8px 6px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1 0 auto;
+}
+
+.product-name {
+  font-size: 14px;
+  font-weight: 800;
+  margin: 0;
+  line-height: 1.25;
+  color: #0b2b4a;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.product-desc {
+  margin: 0;
+  font-size: 12px;
+  color: #6b6f76;
+  line-height: 1.35;
+  flex: 1 0 auto;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.product-actions { display: flex; gap: 8px; align-items: center; }
+.btn-quick {
+  background: transparent;
+  border: 1px solid #d6d6d6;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 12px;
+  color: #0b56b3;
+}
+
+/* ------------------------------------------------------------------------
+   PAGINATION
+   ------------------------------------------------------------------------ */
+.shoes-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 18px 0 48px;
+  margin-bottom: 10px;
+}
+.shoes-pagination .pg-btn {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: 1px solid #dde3ea;
+  background: #fff;
+  color: #0b2b4a;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none;
+}
+.shoes-pagination .pg-btn.active {
+  background: #0b56b3;
+  color: #fff;
+  border-color: #0b56b3;
+}
+.shoes-pagination .pg-btn[disabled] { opacity: 0.45; cursor: default; }
+.shoes-pagination .pg-ellipsis { color: #9aa6b2; font-size: 18px; }
+.shoes-pagination .pg-nav {
+  background: transparent;
+  border: none;
+  color: #0b2b4a;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 6px 10px;
+}
+
+/* ------------------------------------------------------------------------
+   Responsive behavior & final desktop tweaks
+   ------------------------------------------------------------------------ */
+
+/* Desktop large: 4 columns, ensure hero right column is wide; larger title */
+@media (min-width: 1201px) {
+  .products-grid { grid-template-columns: repeat(4, 1fr); }
+  .product-media { height: 240px; }
+
+  /* ensure hero matches Shoes page exact column ratio on large screens */
+  .shoes-hero-inner {
+    grid-template-columns: 1fr 520px;
+    max-width: 1600px;
+  }
+
+  /* Make category name bigger and bolder on PC as requested */
+  .shoes-hero-title {
+    font-size: 44px; /* large desktop title */
+    line-height: 1.02;
+    font-weight: 900;
+  }
+  .shoes-kicker { font-size: 18px; }
+
+  /* Larger thumbnail boxes but not overwhelming; they sit inside right panel boxes */
+  .shoes-hero-mini img {
+    width: 200px;
+    height: 190px;
+    border-width: 6px;
+  }
+
+  /* Make sure subtitle and other words fit within their box */
+  .shoes-hero-sub { font-size: 15px; max-width: 100%; }
+}
+
+/* Medium screens: 3 columns (3x3 layout) */
+@media (max-width: 1200px) and (min-width: 901px) {
+  .shoes-hero-inner { grid-template-columns: 1fr 380px; min-height: 520px; }
+  .products-grid { grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .product-media { height: 200px; }
+
+  /* slightly reduce thumbnail size for medium */
+  .shoes-hero-mini img { width: 160px; height: 140px; border-width: 5px; }
+  .shoes-hero-title { font-size: 36px; }
+}
+
+/* Small tablet: 2 columns (2x4 layout) */
+@media (max-width: 900px) and (min-width: 601px) {
+  .shoes-hero-inner { grid-template-columns: 1fr 360px; min-height: 480px; }
+  .products-grid { grid-template-columns: repeat(2, 1fr); gap: 18px; }
+  .product-media { height: 200px; }
+
+  .shoes-hero-mini img { width: 140px; height: 120px; border-width: 5px; }
+  .shoes-hero-title { font-size: 30px; }
+}
+
+/* Mobile: 1 column (1x8 layout); stacked hero as in screenshot 3
+   Make mobile thumbnails larger (as requested earlier) and center them.
+   Also reduce the aggressive image zoom so images remain clear on small screens.
+*/
+@media (max-width: 600px) {
+  .shoes-hero-inner {
+    grid-template-columns: 1fr;
+    min-height: auto;
+    padding-bottom: 8px;
+    max-width: 1000px;
+  }
+
+  .shoes-hero-left {
+    min-height: 360px;
+    height: 360px;
+  }
+
+  .shoes-hero-img {
+    object-position: center center; /* ensure center crop on mobile too */
+  }
+
+  .shoes-hero-right {
+    padding: 28px 18px;
+    text-align: center;
+    justify-content: flex-start;
+    min-height: auto;
+  }
+
+  .shoes-hero-mini {
+    position: relative;
+    bottom: 0;
+    right: 0;
+    justify-content: center;
+    margin: 12px auto 0;
+    left: 0;
+  }
+
+  .shoes-hero-mini img {
+    width: 140px;  /* slightly larger thumbnails on mobile, centered */
+    height: 110px;
+    border-radius: 6px;
+    border-width: 6px;
+  }
+
+  .products-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    max-width: 480px;
+    margin: 18px auto 40px;
+  }
+
+  .product-media {
+    height: 240px; /* larger visual area on mobile */
+  }
+
+  .product-media img { transform: scale(1.04); } /* gentle zoom on mobile */
+  .product-card { min-height: auto; padding: 12px; }
+  .shoes-toolbar {
+    max-width: 480px;
+    margin: 14px auto 6px;
+    padding: 0 12px;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* Title sizing on mobile */
+  .shoes-hero-title { font-size: 22px; font-weight: 900; }
+  .shoes-hero-sub { font-size: 15px; max-width: 100%; }
+}
+
+/* Very wide screens */
+@media (min-width: 1600px) {
+  .shoes-hero-inner { max-width: 1800px; grid-template-columns: 1fr 520px; }
+  .products-grid { max-width: 1800px; grid-template-columns: repeat(4, 1fr); }
+  .product-media { height: 260px; }
+
+  .shoes-hero-mini img {
+    width: 220px;
+    height: 200px;
+    border-width: 6px;
+  }
+  .shoes-hero-title { font-size: 52px; }
+}
+
+/* ------------------------------------------------------------------------
+   Minor utility & accessibility tweaks
+   ------------------------------------------------------------------------ */
+.shoes-hero [role="img"],
+.product-media img {
+  image-rendering: -webkit-optimize-contrast;
+  -webkit-user-drag: none;
+}
+
+/* make product card clickable pointer */
+a.product-card { cursor: pointer; }
+
+/* ensure focus styles for keyboard users */
+.product-card:focus-within,
+.product-card:focus {
+  outline: 3px solid rgba(11,86,179,0.12);
+  outline-offset: 2px;
+}
+
+/* Fallback high-specificity overrides to ensure images always fill */
+.products-grid .product-media img,
+.product-media img {
+  object-fit: cover !important;
+  object-position: center center !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Keep hero image behavior consistent across category pages */
+.shoes-hero-left .shoes-hero-img {
+  object-fit: cover !important;
+  object-position: center center !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* If you find certain source images still appear too small visually,
+   increase the product-media img scale slightly (careful with pixelation).
+   This rule is conservative to preserve image quality while ensuring
+   consistent cropping/zoom across images. */
+.products-grid.large-zoom .product-media img {
+  transform: scale(1.12) !important;
+}
+
+/* End of file */

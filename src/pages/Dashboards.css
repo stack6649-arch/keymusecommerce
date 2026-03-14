@@ -1,0 +1,773 @@
+:root{
+  /* Central sizing variables */
+  --avatar-fixed-size: 280px; /* desktop avatar size (reduced slightly) */
+  --card-vertical-padding: 44px; /* used to keep card min-height matching avatar */
+}
+
+/* Ensure consistent box-sizing across this component */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Base layout */
+.dashboard-wrap{
+  background:#fff;
+  display:flex;
+  justify-content:center;
+  padding:20px;
+  overflow-x: hidden; /* prevent horizontal overflow on smaller screens */
+}
+
+.dashboard-container{
+  width:100%;
+  max-width:1400px; /* wide layout on desktop */
+  padding: 0 20px;
+  margin: 0 auto;
+  box-sizing:border-box;
+}
+
+/* Top rounded container (header above the two cards) */
+.dashboard-top{
+  background: #fff;
+  border: 1px solid #eef3f9;
+  border-radius: 18px;
+  padding: 28px;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 30px rgba(10,20,40,0.03);
+  width:100%;
+  box-sizing:border-box;
+}
+
+/* Header */
+.dashboard-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:22px;
+}
+
+.dashboard-header h1{
+  font-size:32px;
+  font-weight:800;
+  margin:0;
+}
+
+.cred-box{
+  display:flex;
+  gap:15px;
+  align-items:center;
+}
+
+.tier{
+  background:#0b62ff;
+  color:#fff !important;
+  padding:8px 14px;
+  border-radius:14px;
+  font-size:14px;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  box-shadow: 0 4px 12px rgba(11,98,255,0.12);
+}
+
+/* Top cards layout: left = balances card, right = registered days */
+.top-cards{
+  display:grid;
+  /* use minmax to avoid overlap and allow flexible growth without covering content */
+  grid-template-columns: minmax(320px, 1.2fr) minmax(280px, 1fr);
+  gap:20px;
+  align-items:stretch; /* forces children to stretch vertically to same row height */
+  width:100%;
+  box-sizing:border-box;
+}
+
+/* Generic card look */
+.balance-card,
+.registered-card{
+  background:#fff;
+  border-radius:12px;
+  padding:22px;
+  box-shadow: 0 8px 18px rgba(10,20,40,0.03);
+  box-sizing:border-box;
+  width:100%;
+  display:flex;
+  gap:24px;
+  align-items:flex-start;
+  /* ensure cards stretch to fill grid cell and prevent overlap */
+  height:100%;
+  overflow:hidden;
+}
+
+/* Force left and right cards to align by applying a min-height based on avatar size + paddings.
+   This ensures the avatar (fixed) and the balance content align consistently when the page grows. */
+.balance-card{
+  /* keep min-height so avatar and balance align; also allow content to grow without overlapping */
+  min-height: calc(var(--avatar-fixed-size) + var(--card-vertical-padding));
+  flex-direction:row;
+}
+
+/* Registered card uses the same min-height so both cards align */
+.registered-card{
+  min-height: calc(var(--avatar-fixed-size) + var(--card-vertical-padding));
+  flex-direction:column;
+}
+
+/* Desktop avatar-box: fixed width/height so layout doesn't reflow when growing */
+.avatar-box{
+  position:relative;
+  flex: 0 0 var(--avatar-fixed-size);
+  width: var(--avatar-fixed-size);
+  height: var(--avatar-fixed-size);
+  box-sizing:border-box;
+  overflow:hidden;
+  border-radius:18px;
+  background:#d9dce3;
+}
+
+/* Use the imported user image on desktop (class used in JSX: avatar-img) */
+.avatar-img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  border-radius:18px;
+  display:block;
+  background:#d9dce3;
+}
+
+/* overlapping plus button */
+.avatar-plus{
+  position:absolute;
+  bottom:14px;
+  right:14px;
+  background:#0b62ff;
+  color:#fff;
+  width:48px;
+  height:48px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:700;
+  font-size:22px;
+  box-shadow: 0 6px 18px rgba(11,98,255,0.18);
+  z-index:2;
+}
+
+/* Mobile avatar wrapper (kept for mobile displays) */
+.dashboard-avatar{
+  display:none; /* desktop uses .avatar-img; mobile will show this block */
+  position:relative;
+  width:160px;
+  height:160px;
+  border-radius:16px;
+  overflow:hidden;
+  background:#bdbdbd;
+}
+
+/* Balance content (right side of balance-card) */
+.balance-content,
+.balance-info{
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-start;
+  width:100%;
+  box-sizing:border-box;
+}
+
+.balance-title{
+  font-weight:700;
+  font-size:18px;
+  margin-bottom:6px;
+}
+
+/* large USD amount on desktop */
+.balance-amount{
+  color:#0b62ff;
+  font-size:36px;
+  font-weight:900;
+  margin:0 0 10px;
+}
+
+/* Mini balances stacked vertically; words and values on separate lines */
+.balance-row{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  max-width:420px;
+}
+
+.balance-mini{
+  background:#f6f8fb;
+  padding:18px;
+  border-radius:12px;
+  font-size:15px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.balance-mini .mini-label{
+  font-weight:600;
+  color:#111827;
+}
+
+.balance-mini .mini-value{
+  color:#8f9bad;
+  font-weight:600;
+}
+
+/* Registered working days */
+.registered-card{
+  position:relative;
+  box-sizing:border-box;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-start;
+  gap:12px;
+}
+
+.registered-card-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+/* new action icon on registered card (user clicks to mark task-set complete) */
+.registered-action{
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  background:#0b62ff;
+  border:0;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  box-shadow: 0 6px 14px rgba(11,98,255,0.16);
+  padding:0;
+}
+
+/* make the svg inside the action white */
+.registered-action svg{
+  width:18px;
+  height:18px;
+  stroke:#fff;
+  fill:none;
+}
+
+/* Registered working days text */
+.registered-title{
+  font-weight:800;
+  font-size:20px;
+  margin-bottom:0;
+}
+
+.registered-sub{
+  font-size:13px;
+  color:#7f8b96;
+  margin-bottom:0;
+}
+
+.registered-sub span{
+  color:#0b62ff;
+  font-weight:700;
+}
+
+/* Days row */
+.days-row{
+  display:flex;
+  gap:18px;
+  align-items:center;
+  margin-top:8px;
+}
+
+.day{
+  text-align:center;
+}
+
+/* circle: when completed it becomes blue (.signed) */
+.circle{
+  width:48px;
+  height:48px;
+  border-radius:50%;
+  border:3px solid #efece3;
+  background:transparent;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+}
+
+/* tick inside completed circle */
+.day-tick{
+  position:relative;
+  display:block;
+}
+
+/* completed look */
+.circle.signed{
+  background:#0b62ff;
+  border-color:#0b62ff;
+}
+
+/* label under the circle */
+.day-label{
+  font-size:12px;
+  color:#7f8b96;
+  margin-top:6px;
+}
+
+/* Earnings box */
+.dashboard-earnings{
+  background:#0b62ff;
+  color:#fff;
+  border-radius:12px;
+  padding:20px;
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  text-align:center;
+  margin:30px 0 25px;
+  width:100%;
+  box-sizing:border-box;
+}
+
+.earn-title{
+  font-size:14px;
+}
+
+.earn-value{
+  font-size:22px;
+  font-weight:900;
+  margin-top:5px;
+}
+
+/* Sections/cards below */
+.dash-section{
+  margin-bottom:25px;
+}
+
+.section-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:12px;
+}
+
+.section-title{
+  font-weight:800;
+}
+
+.section-icon{
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  background:#0b62ff;
+}
+
+/* small adjustments to keep section icon SVG white */
+.section-icon svg { stroke: #fff; fill: none; }
+
+/* existing grid for section content */
+.section-grid{
+  display:grid;
+  gap:14px;
+}
+
+.grid-4{
+  grid-template-columns:repeat(4,1fr);
+}
+
+.grid-2{
+  grid-template-columns:repeat(2,1fr);
+}
+
+.dash-card{
+  background:#f6f8fb;
+  border-radius:10px;
+  padding:15px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  text-decoration:none;
+  color:#000;
+}
+
+.card-title{
+  font-weight:700;
+  font-size:14px;
+}
+
+.card-desc{
+  font-size:12px;
+  color:#94a3b8;
+  margin-top:3px;
+}
+
+.card-arrow{
+  font-size:20px;
+  color:#94a3b8;
+}
+
+/* Mobile avatar (kept for mobile layout) - will reuse same imported image */
+.dashboard-avatar img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+.dashboard-avatar-add{
+  position:absolute;
+  right:6px;
+  bottom:6px;
+  background:#0b62ff;
+  color:#fff;
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:700;
+  font-size:18px;
+}
+
+/* ---------- Mobile / small screens: ensure everything fits 100% width ----------
+   Important: adjust days-row and circle sizing so 7 circles fit in a single row.
+*/
+@media (max-width:900px) {
+
+  :root{
+    --avatar-fixed-size: 220px; /* smaller avatar on mobile */
+    --card-vertical-padding: 36px;
+  }
+
+  .dashboard-container{
+    max-width:100%;
+    padding: 0 12px;
+  }
+
+  .dashboard-top{
+    padding: 16px;
+    margin-bottom: 16px;
+    border-radius: 12px;
+  }
+
+  .dashboard-header{
+    flex-direction:column;
+    align-items:flex-start;
+    gap:8px;
+    margin-bottom:12px;
+  }
+
+  .dashboard-header h1{
+    font-size:28px;
+    line-height:1.05;
+    margin:0;
+    word-break: break-word; /* ensure long names wrap */
+  }
+
+  .cred-box{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-top:4px;
+    flex-wrap:wrap;
+  }
+
+  .tier{
+    padding:8px 12px;
+    border-radius:10px;
+    font-size:15px;
+  }
+
+  /* Top cards stack vertically to prevent overflow */
+  .top-cards{
+    grid-template-columns: 1fr;
+    gap:14px;
+    align-items:stretch;
+  }
+
+  /* Make balance and registered cards full-width and reduce internal spacing */
+  .balance-card,
+  .registered-card{
+    padding:16px;
+    min-height: auto;
+    box-shadow: 0 6px 14px rgba(10,20,40,0.04);
+    flex-direction:column;
+    gap:12px;
+  }
+
+  /* On mobile use the imported image inside .dashboard-avatar and hide desktop .avatar-box */
+  .avatar-box{
+    display:none; /* hide desktop fixed avatar on small screens */
+  }
+
+  .dashboard-avatar{
+    display:block;
+    width:var(--avatar-fixed-size);
+    height:var(--avatar-fixed-size);
+    border-radius:14px;
+    margin-bottom:12px;
+  }
+
+  .dashboard-avatar img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    border-radius:14px;
+  }
+
+  .avatar-plus{
+    position:absolute;
+    bottom:12px;
+    right:12px;
+  }
+
+  /* Stack balance card vertically */
+  .balance-card{
+    flex-direction:column;
+    gap:12px;
+    align-items:flex-start;
+  }
+
+  .balance-content{
+    width:100%;
+  }
+
+  .balance-info{
+    margin-bottom:10px;
+  }
+
+  .balance-title{
+    font-size:16px;
+  }
+
+  .balance-amount{
+    font-size:28px;
+  }
+
+  /* Mini balances: keep words and amounts on separate lines, but reduce padding */
+  .balance-row{
+    gap:12px;
+    max-width:100%;
+  }
+
+  .balance-mini{
+    padding:14px;
+    border-radius:12px;
+    font-size:14px;
+  }
+
+  /* Make sure the earnings box doesn't overflow the viewport */
+  .dashboard-earnings{
+    grid-template-columns: 1fr;
+    padding:16px;
+    margin: 18px 0;
+  }
+
+  /* Sections below stack appropriately and fit */
+  .section-grid{
+    grid-template-columns: 1fr;
+    gap:12px;
+  }
+
+  /* Ensure no element grows wider than the viewport */
+  .avatar-img,
+  .dashboard-avatar img,
+  .balance-card,
+  .registered-card,
+  .dashboard-top,
+  .dashboard-earnings {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  /* --- KEY: force 7 circles to stay on single row on mobile ---
+     Reduce circle size slightly, reduce gap, and prevent wrapping.
+     Also allow the days-row to use space-between so circles spread evenly.
+  */
+  .days-row{
+    display:flex;
+    gap:10px; /* smaller gap */
+    justify-content:space-between;
+    align-items:center;
+    margin-top:8px;
+    flex-wrap:nowrap; /* prevent wrapping to next line */
+    overflow:hidden; /* hide any tiny overflow */
+    width:100%;
+    box-sizing:border-box;
+  }
+
+  .circle{
+    width:40px;   /* reduced size for mobile so 7 fit */
+    height:40px;
+    border-radius:50%;
+    border:3px solid #efece3;
+    background:transparent;
+    flex: 0 0 40px; /* fixed flex-basis to prevent shrinking below size */
+  }
+
+  .circle.signed{
+    background:#0b62ff;
+    border-color:#0b62ff;
+  }
+
+  .day-label{
+    font-size:11px;
+    color:#7f8b96;
+    margin-top:6px;
+  }
+
+  /* Reduce gaps and padding at very small viewports */
+  @media (max-width:480px) {
+    .dashboard-container{
+      padding: 0 10px;
+    }
+    .dashboard-header h1{
+      font-size:24px;
+    }
+    .balance-amount{
+      font-size:24px;
+    }
+    .dashboard-avatar{
+      width:180px;
+      height:180px;
+    }
+    .balance-mini{
+      padding:12px;
+    }
+    .tier{
+      font-size:14px;
+      padding:8px 10px;
+    }
+
+    /* make circles slightly smaller on very small screens but still keep 7 visible */
+    .days-row{
+      gap:8px;
+    }
+    .circle{
+      width:36px;
+      height:36px;
+      flex: 0 0 36px;
+    }
+    .day-label{
+      font-size:10px;
+    }
+  }
+}
+
+/* Ensure images never cause overflow on larger screens either */
+img{
+  max-width:100%;
+  height:auto;
+  display:block;
+}
+
+/* Section icons: neat blue circular icons with centered white SVGs
+   These rules style the .section-icon element used in the Section component (Asset / Profile / History).
+*/
+
+/* Ensure section header keeps its layout and the icon sits to the right */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* keeps title left and icon right */
+  gap: 12px;
+  position: relative;
+}
+
+/* Blue circular icon container */
+.section-icon {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  border-radius: 50%;
+  background: #0b62ff; /* blue background */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 14px rgba(11,98,255,0.16);
+  cursor: default; /* change to pointer if clickable */
+  transition: transform 120ms ease, box-shadow 120ms ease;
+  flex: 0 0 auto;
+}
+
+/* Center the inline SVG and ensure white stroke/fill */
+.section-icon svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+  stroke: #ffffff; /* enforce white stroke */
+  fill: none;      /* ensure icons are outlined as in designs */
+}
+
+/* Optional hover/focus visual feedback */
+.section-icon:hover,
+.section-icon:focus {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 22px rgba(11,98,255,0.2);
+}
+
+/* Smaller icon on mobile to keep layout compact */
+@media (max-width: 900px) {
+  .section-icon {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .section-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 480px) {
+  .section-icon {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+  }
+  .section-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+/* Make sure the icon won't overlap card content — keep header spacing */
+.section-header .section-title {
+  margin-right: 12px;
+  flex: 1 1 auto;
+  min-width: 0; /* allow title to truncate/wrap properly if needed */
+}
+
+/* If you want these icons to be clickable links, change cursor to pointer:
+   .section-icon { cursor: pointer; }
+*/
+/* show disabled look for the registered-action button */
+.registered-action[aria-disabled="true"],
+.registered-action:disabled {
+  opacity: 0.64;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* smooth fill transition when a day becomes signed */
+.circle {
+  transition: background-color 220ms ease, border-color 220ms ease, transform 180ms ease;
+}
+.circle.signed {
+  transform: translateY(-2px);
+}
+
+/* visible focus outline for keyboard users */
+.registered-action:focus {
+  outline: 3px solid rgba(11,98,255,0.18);
+  outline-offset: 3px;
+}

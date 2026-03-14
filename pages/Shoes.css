@@ -1,0 +1,468 @@
+/* ========================================================================
+   Shoes.css
+   - Updated to precisely match the original platform screenshot:
+     * Large left hero image with right beige information panel
+     * Mini thumbnails bottom-right of the hero panel
+     * Product grid with 4-up cards on desktop, 3-up on tablet, 1-up on phone
+     * Pagination styling to match the original (centered, pill buttons,
+       blue active state)
+   - Also removes the global return-strip / sidebar overlay on the Shoes page
+     (scoped where supported; fallback included).
+   - Kept styles compact and removed repeated selectors.
+   ======================================================================== */
+
+/* Page root */
+.shoes-page {
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  color: #071e2f;
+  background: #fff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ------------------------------------------------------------------------
+   Remove the dark return-strip + sidebar overlay when Shoes page is present.
+   - Primary: use :has() to scope to .layout-container that contains .shoes-page.
+   - Fallback: direct selectors (broader). If you want to avoid the fallback
+     remove the fallback block below.
+   ------------------------------------------------------------------------ */
+.layout-container:has(.shoes-page) > div[style*="linear-gradient(180deg,#071e2f"],
+.layout-container:has(.shoes-page) .dashboard-sidebar-overlay {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Fallback (broader) - remove this block if you prefer only the :has() rule */
+.layout-container > div[style*="linear-gradient(180deg,#071e2f"],
+.dashboard-sidebar-overlay {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* ------------------------------------------------------------------------
+   HERO: Left large image (background) + Right info panel
+   - Layout matches the reference: big visual on left and a fixed-width
+     beige panel on the right with kicker/title/subtext and small thumbnails.
+   ------------------------------------------------------------------------ */
+.shoes-hero {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
+
+/* outer inner grid: left visual, right panel */
+.shoes-hero-inner {
+  display: grid;
+  grid-template-columns: 1fr 420px; /* desktop balance (left large, right fixed) */
+  align-items: stretch;
+  gap: 0;
+  max-width: 1200px; /* content constrained to platform width */
+  margin: 0 auto;
+  min-height: 520px; /* hero height consistent with reference */
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* left column shows the hero image (set by React inline style on the section) */
+.shoes-hero-left {
+  width: 100%;
+  height: 100%;
+  background-position: center right;
+  background-size: cover;
+  background-repeat: no-repeat;
+  position: relative;
+  overflow: hidden;
+}
+
+/* apply a soft left-side white fade to emulate the original screenshot */
+.shoes-hero-left::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 40%;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0) 100%);
+}
+
+/* right panel */
+.shoes-hero-right {
+  background: #efe9e4; /* beige panel to the right */
+  padding: 60px 48px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+}
+
+/* kicker + title area */
+.shoes-kicker {
+  color: #0b56b3; /* blue kicker */
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.shoes-hero-title {
+  font-size: 28px;
+  line-height: 1.05;
+  margin: 0 0 10px 0;
+  color: #0b2b4a;
+  font-weight: 800;
+}
+
+.shoes-hero-sub {
+  margin: 0 0 6px 0;
+  font-size: 14px;
+  color: #666;
+  max-width: 340px;
+}
+
+/* small thumbnails bottom-right of the beige panel (overlapping the edge slightly) */
+.shoes-hero-mini {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  position: absolute;
+  bottom: 18px;
+  right: 18px;
+}
+
+.shoes-hero-mini img {
+  width: 72px;
+  height: 54px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 4px solid rgba(255,255,255,0.9); /* white tile look */
+  box-shadow: 0 2px 6px rgba(11,43,74,0.08);
+}
+
+/* ------------------------------------------------------------------------
+   Toolbar (product count + sort)
+   - Aligned to the content width (same max-width as hero)
+   ------------------------------------------------------------------------ */
+.shoes-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 22px auto 8px;
+  padding: 0 12px;
+  color: #071e2f;
+  font-weight: 700;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+
+/* sort control styling */
+.shoes-sort {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-weight: 600;
+  color: #333;
+}
+.shoes-sort label {
+  font-weight: 700;
+  font-size: 13px;
+}
+.shoes-sort select {
+  padding: 6px 8px;
+  border: 1px solid #e6e6e6;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 13px;
+}
+
+/* ------------------------------------------------------------------------
+   PRODUCT GRID
+   - 4 columns on desktop (matching reference)
+   - neat card boxes, image centered, compact title/desc
+   ------------------------------------------------------------------------ */
+.products-grid {
+  max-width: 1200px;
+  margin: 18px auto 34px;
+  padding: 0 12px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  box-sizing: border-box;
+}
+
+/* product card baseline */
+.product-card {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid #eef0f2;
+  transition: box-shadow 0.15s ease, transform 0.12s ease;
+  text-decoration: none;
+  color: inherit;
+  min-height: 320px;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+/* hover lifts and subtle shadow */
+.product-card:hover {
+  box-shadow: 0 8px 30px rgba(11,43,74,0.06);
+  transform: translateY(-4px);
+}
+
+/* image area: white inset like original platform */
+.product-media {
+  background: #fff;
+  height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-bottom: 1px solid #f3f3f3;
+  margin-bottom: 8px;
+}
+
+.product-media img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* body area: title, desc, action */
+.product-body {
+  padding: 8px 6px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1 0 auto;
+}
+
+.product-name {
+  font-size: 13px;
+  font-weight: 800;
+  margin: 0;
+  line-height: 1.25;
+  color: #0b2b4a;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.product-desc {
+  margin: 0;
+  font-size: 12px;
+  color: #6b6f76;
+  line-height: 1.35;
+  flex: 1 0 auto;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* quick view action styled as small badge like original */
+.product-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.btn-quick {
+  background: transparent;
+  border: 1px solid #d6d6d6;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 12px;
+  color: #0b56b3;
+}
+
+/* ------------------------------------------------------------------------
+   PAGINATION - centered, small pill buttons - match original look
+   ------------------------------------------------------------------------ */
+.shoes-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 18px 0 48px;
+  margin-bottom: 10px;
+}
+
+/* numbered buttons */
+.shoes-pagination .pg-btn {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: 1px solid #dde3ea;
+  background: #fff;
+  color: #0b2b4a;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none;
+}
+
+/* active */
+.shoes-pagination .pg-btn.active {
+  background: #0b56b3;
+  color: #fff;
+  border-color: #0b56b3;
+}
+
+/* disabled style */
+.shoes-pagination .pg-btn[disabled] {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* ellipsis */
+.shoes-pagination .pg-ellipsis {
+  color: #9aa6b2;
+  font-size: 18px;
+}
+
+/* small prev/next text buttons */
+.shoes-pagination .pg-nav {
+  background: transparent;
+  border: none;
+  color: #0b2b4a;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 6px 10px;
+}
+
+/* ------------------------------------------------------------------------
+   Responsive behavior - match first screenshot across breakpoints
+   ------------------------------------------------------------------------ */
+
+/* Tablet: ~ 992px and below */
+@media (max-width: 1100px) {
+  .shoes-hero-inner {
+    grid-template-columns: 1fr 360px;
+    min-height: 480px;
+  }
+
+  .products-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+  }
+
+  .product-media {
+    height: 150px;
+  }
+}
+
+/* Narrow tablet / large phone */
+@media (max-width: 820px) {
+  .shoes-hero-inner {
+    grid-template-columns: 1fr 320px;
+    min-height: 420px;
+    max-width: 1000px;
+  }
+
+  .shoes-hero-right {
+    padding: 40px 26px;
+  }
+
+  .shoes-hero-mini img {
+    width: 64px;
+    height: 48px;
+  }
+}
+
+/* Mobile: stack hero and single-column product list (first screenshot is long single column) */
+@media (max-width: 600px) {
+  .shoes-hero-inner {
+    grid-template-columns: 1fr;
+    min-height: 420px;
+    padding-bottom: 8px;
+  }
+
+  .shoes-hero-right {
+    padding: 28px 18px;
+    text-align: center;
+  }
+
+  /* move thumbnails under the panel and center */
+  .shoes-hero-mini {
+    position: relative;
+    bottom: 0;
+    right: 0;
+    justify-content: center;
+    margin-top: 12px;
+  }
+
+  .products-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    max-width: 480px;
+    margin: 18px auto 40px;
+  }
+
+  .product-media {
+    height: 240px; /* make product images larger on mobile to match reference long-scroll */
+  }
+
+  .product-card {
+    min-height: auto;
+  }
+
+  /* pagination spacing for mobile */
+  .shoes-pagination {
+    padding-bottom: 36px;
+    gap: 6px;
+  }
+
+  .shoes-toolbar {
+    max-width: 480px;
+    margin: 14px auto 6px;
+    padding: 0 12px;
+    align-items: center;
+    gap: 10px;
+  }
+}
+
+/* Very large screens: widen content center */
+@media (min-width: 1600px) {
+  .shoes-hero-inner {
+    max-width: 1400px;
+  }
+
+  .products-grid {
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* ------------------------------------------------------------------------
+   Minor utility & accessibility tweaks
+   ------------------------------------------------------------------------ */
+.shoes-hero [role="img"],
+.product-media img {
+  image-rendering: -webkit-optimize-contrast;
+  -webkit-user-drag: none;
+}
+
+a.product-card {
+  cursor: pointer;
+}
+
+/* ensure focus styles for keyboard users */
+.product-card:focus-within,
+.product-card:focus {
+  outline: 3px solid rgba(11,86,179,0.12);
+  outline-offset: 2px;
+}
