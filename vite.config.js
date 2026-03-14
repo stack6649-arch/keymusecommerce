@@ -4,6 +4,10 @@ import { resolve } from "path";
 import { copyFileSync, existsSync } from "fs";
 
 export default defineConfig({
+  // Set base so assets load correctly when served from:
+  // https://stack6649-arch.github.io/keymusecommerce
+  base: "/keymusecommerce/",
+
   plugins: [react()],
   resolve: {
     alias: {
