@@ -332,7 +332,7 @@ export default function Dashboard() {
             <h2>ABOUT</h2>
 
             <p>
-              GA Agency was founded by former E-Commerce merchants and
+              KEYMUS-Ecommerce was founded by former E-Commerce merchants and
               startup entrepreneurs who set out to create the total premium retail hub.
             </p>
 
