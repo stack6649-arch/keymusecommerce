@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useBalance } from "../context/balanceContext";
 import { useTransactions } from "../context/transactionContext";
 import "./Dashboards.css";
+import CustomerServiceModal from "../components/CustomerServiceModal.jsx";
 
 /*
   Deposit.jsx (Recharge / Topup page)
@@ -23,6 +24,8 @@ export default function Deposit() {
   const { balance, refreshProfile, userProfile } = useBalance();
   const { deposits = [], loading } = useTransactions();
 
+  const [csOpen, setCsOpen] = useState(false);
+
   // frozen amount: if you have a source use it; fallback to 0
   const frozenAmount = (userProfile && (userProfile.frozenAmount || userProfile.frozen)) || 0;
 
@@ -36,11 +39,16 @@ export default function Deposit() {
 
   const handleOpenCustomerService = (e) => {
     if (e && typeof e.preventDefault === "function") e.preventDefault();
+    setCsOpen(true);
     try {
       window.dispatchEvent(new CustomEvent("openCustomerService"));
     } catch (err) {
       // noop
     }
+  };
+
+  const handleCloseCustomerService = () => {
+    setCsOpen(false);
   };
 
   const formattedBalance = Number(balance || 0).toLocaleString(undefined, {
@@ -328,6 +336,8 @@ export default function Deposit() {
         <div className="footer-spacer" />
 
       </div>
+
+      <CustomerServiceModal open={csOpen} onClose={handleCloseCustomerService} />
     </main>
   );
 }
