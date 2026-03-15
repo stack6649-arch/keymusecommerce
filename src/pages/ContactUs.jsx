@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import contactImg from "../assets/images/dashboard/contact-us.png";
+import CustomerServiceModal from "../components/CustomerServiceModal.jsx";
 
 /**
  * ContactUs.jsx
@@ -16,6 +17,8 @@ import contactImg from "../assets/images/dashboard/contact-us.png";
  */
 
 export default function ContactUs() {
+  const [csOpen, setCsOpen] = useState(false);
+
   const OPEN_BTN_BG = "#1f4de6";
   const PAGE_BG = "#fbf9f5";
   const CARD_BG = "#ffffff";
@@ -24,11 +27,16 @@ export default function ContactUs() {
 
   const handleOpenCustomerService = (e) => {
     if (e && typeof e.preventDefault === "function") e.preventDefault();
+    setCsOpen(true);
     try {
       window.dispatchEvent(new CustomEvent("openCustomerService"));
     } catch (err) {
       // noop
     }
+  };
+
+  const handleCloseCustomerService = () => {
+    setCsOpen(false);
   };
 
   const handleSend = (e) => {
@@ -289,6 +297,8 @@ export default function ContactUs() {
           </form>
         </section>
       </main>
+
+      <CustomerServiceModal open={csOpen} onClose={handleCloseCustomerService} />
     </div>
   );
 }
