@@ -218,7 +218,7 @@ export default function PrivatePolicy() {
           <h3 style={{ marginTop: 8, marginBottom: 12 }}>How We Protect Your Personal Information</h3>
 
           <p style={{ margin: "6px 0 20px 0" }}>
-            GKEYMUS-Ecommerce has reasonable security measures in place to help protect personal data from loss, misuse, unauthorized access, disclosure,
+            KEYMUS-Ecommerce has reasonable security measures in place to help protect personal data from loss, misuse, unauthorized access, disclosure,
             alteration, and destruction.
           </p>
 
