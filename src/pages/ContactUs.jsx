@@ -218,7 +218,7 @@ export default function ContactUs() {
             <div className="cu-heading-underline" />
             <div style={{ marginTop: 6 }}>
               <div className="cu-section-title">Customer Enquiries</div>
-              <a className="cu-email" href="mailto:customer-support@ga-agency-uk.cc">customer-support@ga-agency-uk.cc</a>
+              <a className="cu-email" href="mailto:customer-support@keymus-ecommerce-uk.cc">customer-support@keymus-ecommerce-uk.cc</a>
 
               <div className="cu-hours">10AM to 10PM</div>
 
@@ -281,7 +281,7 @@ export default function ContactUs() {
             <div className="cu-checkbox-row">
               <input type="checkbox" id="consent" />
               <label htmlFor="consent" style={{ fontSize: 13, color: "rgba(0,0,0,0.8)" }}>
-                I acknowledge that by submitting this enquiry, I consent to having my personal collected, used, disclosed and/or processed in accordance with GA Agency's privacy policy.
+                I acknowledge that by submitting this enquiry, I consent to having my personal collected, used, disclosed and/or processed in accordance with KEYMUS-Ecommerce's privacy policy.
               </label>
             </div>
 
