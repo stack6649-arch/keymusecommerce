@@ -191,9 +191,9 @@ export default function TermsAndConditions() {
             <div style={{ marginTop: 6 }}>
               <div>Commission/Data = 0.5%</div>
               <div>No. of Data = 40</div>
-              <div>Basic Salary = 1,400 USD</div>
-              <div>Unlock Condition = Initial Recharge of 50 ~ 1,499 USD</div>
-              <div>Withdrawal limit per day: 10 ~ 2,000 USD</div>
+              <div>Basic Salary = 1,400 </div>
+              <div>Unlock Condition = Initial Recharge of 50 ~ 1,499 </div>
+              <div>Withdrawal limit per day: 10 ~ 2,000 </div>
             </div>
           </div>
 
@@ -202,9 +202,9 @@ export default function TermsAndConditions() {
             <div style={{ marginTop: 6 }}>
               <div>Commission/Data = 1.0%</div>
               <div>No. of Data = 43</div>
-              <div>Basic Salary = 2,000 USD</div>
-              <div>Upgrade Condition = Initial Recharge of 1,500 ~ 2,999 USD</div>
-              <div>Withdrawal limit per day: 10 ~ 10,000 USD</div>
+              <div>Basic Salary = 2,000 </div>
+              <div>Upgrade Condition = Initial Recharge of 1,500 ~ 2,999 </div>
+              <div>Withdrawal limit per day: 10 ~ 10,000 </div>
             </div>
           </div>
 
@@ -213,9 +213,9 @@ export default function TermsAndConditions() {
             <div style={{ marginTop: 6 }}>
               <div>Commission/Data = 1.5%</div>
               <div>No. of Data = 45</div>
-              <div>Basic Salary = 2,600 USD</div>
-              <div>Upgrade Condition = Initial Recharge of 3,000 ~ 4,999 USD</div>
-              <div>Withdrawal limit per day: 10 ~ 50,000 USD</div>
+              <div>Basic Salary = 2,600 </div>
+              <div>Upgrade Condition = Initial Recharge of 3,000 ~ 4,999 </div>
+              <div>Withdrawal limit per day: 10 ~ 50,000 </div>
             </div>
           </div>
 
@@ -224,9 +224,9 @@ export default function TermsAndConditions() {
             <div style={{ marginTop: 6 }}>
               <div>Commission/Data = 2%</div>
               <div>No. of Data = 50</div>
-              <div>Basic Salary = 3,400 USD</div>
-              <div>Upgrade Condition = Initial Recharge of 5,000 USD or above</div>
-              <div>Withdrawal limit per day: 10 USD or above.</div>
+              <div>Basic Salary = 3,400 </div>
+              <div>Upgrade Condition = Initial Recharge of 5,000  or above</div>
+              <div>Withdrawal limit per day: 10  or above.</div>
             </div>
           </div>
 
@@ -236,7 +236,7 @@ export default function TermsAndConditions() {
             department.
           </p>
           <p style={{ margin: "6px 0 20px 0" }}>
-            The recharge for upgrading one level of membership is 5,000 USD. All the recharge made will be able to be
+            The recharge for upgrading one level of membership is 5,000 . All the recharge made will be able to be
             returned to the binding address with the withdrawal amount after the required upgrading recharge.
           </p>
 
