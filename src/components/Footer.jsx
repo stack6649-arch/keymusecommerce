@@ -1,18 +1,22 @@
 // src/components/Footer.jsx
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-// Use GA Agency logo asset as requested
+// logo to place in footer (square Keymus file)
 import logo from "../assets/images/header/keymusecommerce.jpg";
 import chatIcon from "../assets/images/dashboard/chat-DWOAIdKh.png";
 import CustomerServiceModal from "./CustomerServiceModal.jsx";
 
 /**
- * Footer adapted to GA Agency layout/visuals:
- * - White large top area, centered columns (Company / Products)
- * - Muted link colors with blue column titles
- * - Bottom legal row centered
- * - Keeps the floating chat button and modal behaviour
+ * Footer adapted to GA Agency layout/visuals.
+ *
+ * NOTE: This file contains a small, focused layout wrapper around the footer logo
+ * that crops & scales the square Keymus logo so it visually matches the smaller
+ * rectangular GA Agency mark used in the original footer.
+ *
+ * If the size still needs tiny adjustments, update LOGO_WRAP_WIDTH / LOGO_WRAP_HEIGHT
+ * below to tweak the final visible area (px).
  */
+
 export default function Footer() {
   const [csOpen, setCsOpen] = useState(false);
 
@@ -28,82 +32,187 @@ export default function Footer() {
     setCsOpen(false);
   };
 
-  // Change this to match the header/logo size exactly (px)
-  const footerLogoHeight = 72;
+  // Adjust these values to fine-tune the visible logo size/shape in the footer.
+  // LOGO_WRAP_WIDTH x LOGO_WRAP_HEIGHT define the visible "frame" the square logo
+  // will be scaled & cropped into to mimic the rectangular GA mark.
+  // Start with these values and tweak by + / - a few px if necessary.
+  const LOGO_WRAP_WIDTH = 140; // px - visible width of the logo area
+  const LOGO_WRAP_HEIGHT = 44; // px - visible height of the logo area
+
+  // Inline styles only (user requested only Footer.jsx to be changed)
+  const footerRootStyle = {
+    background: "#ffffff",
+    borderTop: "1px solid rgba(0,0,0,0.04)",
+  };
+
+  const containerStyle = {
+    maxWidth: 1200,
+    margin: "0 auto",
+    padding: "36px 20px 14px",
+    boxSizing: "border-box",
+  };
+
+  const topRowStyle = {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: 40,
+    justifyContent: "space-between",
+    flexWrap: "wrap",
+  };
+
+  const leftColumnStyle = {
+    flex: "0 0 220px",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: 12,
+  };
+
+  // The wrapper creates a fixed-size viewport for the logo and hides overflow.
+  // The <img> inside is scaled to fill the wrapper height; because the source
+  // is square, it will overflow horizontally and be clipped to create a visual
+  // rectangular crop similar to the GA logo used in the original footer.
+  const logoWrapperStyle = {
+    width: LOGO_WRAP_WIDTH,
+    height: LOGO_WRAP_HEIGHT,
+    overflow: "hidden",
+    display: "block",
+    boxSizing: "content-box",
+    padding: 0,
+    margin: 0,
+  };
+
+  const logoImgStyle = {
+    // scale image so its height exactly matches the wrapper height
+    height: "100%",
+    width: "auto",
+    display: "block",
+    objectFit: "cover",
+    objectPosition: "50% 60%", // tweak vertical focus if needed (e.g. show more/less bottom)
+    lineHeight: 0,
+    border: 0,
+  };
+
+  const aboutTextStyle = {
+    color: "#9aa4b2",
+    marginTop: 14,
+    lineHeight: 1.6,
+    maxWidth: 420,
+    fontSize: 13,
+  };
+
+  const middleColumnsStyle = {
+    display: "flex",
+    gap: 60,
+    flex: 1,
+    justifyContent: "center",
+    minWidth: 400,
+  };
+
+  const sectionTitleStyle = { color: "#0b63d6", fontWeight: 800, marginBottom: 12 };
+  const linkStyle = { color: "#5b6b77", textDecoration: "none" };
+
+  const dividerStyle = { height: 1, background: "rgba(0,0,0,0.04)", margin: "24px 0" };
+
+  const bottomRowStyle = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 16,
+    flexWrap: "wrap",
+  };
+
+  const bottomLeftStyle = { display: "flex", gap: 12, alignItems: "center", color: "#6b7280", fontSize: 13 };
+  const bottomCenterStyle = { color: "#9aa4b2", fontSize: 13, textAlign: "center", flex: "0 0 auto" };
+
+  const chatBtnStyle = {
+    position: "fixed",
+    right: 20,
+    bottom: 22,
+    width: 56,
+    height: 56,
+    borderRadius: "50%",
+    background: "#0b63d6",
+    border: "none",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    boxShadow: "0 4px 12px rgba(11, 99, 214, 0.3)",
+    zIndex: 9999,
+    cursor: "pointer",
+    padding: 0,
+    transition: "background 0.2s ease, box-shadow 0.2s ease",
+  };
+
+  const chatIconStyle = {
+    width: 32,
+    height: 32,
+    objectFit: "contain",
+    display: "block",
+  };
 
   return (
-    <footer style={{ background: "#ffffff", borderTop: "1px solid rgba(0,0,0,0.04)" }} role="contentinfo">
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "36px 20px 14px", boxSizing: "border-box" }}>
+    <footer style={footerRootStyle} role="contentinfo">
+      <div style={containerStyle}>
         {/* Top content: logo + columns */}
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 40, justifyContent: "space-between", flexWrap: "wrap" }}>
-          <div style={{ flex: "0 0 220px" }}>
-            <img
-              src={logo}
-              alt="GA Agency"
-              // set explicit height to match screenshot 1; adjust footerLogoHeight value if needed
-              height={footerLogoHeight}
-              style={{
-                width: "auto",
-                display: "block",
-                objectFit: "contain",
-                // remove default image drag border/gap
-                border: 0,
-                lineHeight: 0,
-                padding: 0,
-                margin: 0
-              }}
-            />
-            <p style={{ color: "#9aa4b2", marginTop: 14, lineHeight: 1.6, maxWidth: 420, fontSize: 13 }}>
+        <div style={topRowStyle}>
+          <div style={leftColumnStyle}>
+            {/* Logo wrapper -> crops & scales the square logo to a rectangular footprint */}
+            <div style={logoWrapperStyle} aria-hidden={false}>
+              <img src={logo} alt="Keymus logo" style={logoImgStyle} />
+            </div>
+
+            <p style={aboutTextStyle}>
               We are a leading marketing agency that utilizes over 15 years of proprietary data and insights, combined with a team of expert marketers.
             </p>
           </div>
 
-          <div style={{ display: "flex", gap: 60, flex: 1, justifyContent: "center", minWidth: 400 }}>
+          <div style={middleColumnsStyle}>
             <div>
-              <div style={{ color: "#0b63d6", fontWeight: 800, marginBottom: 12 }}>COMPANY</div>
+              <div style={sectionTitleStyle}>COMPANY</div>
               <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                 <li style={{ marginBottom: 10 }}>
-                  <Link to="/About" style={{ color: "#5b6b77", textDecoration: "none" }}>About Us</Link>
+                  <Link to="/About" style={linkStyle}>About Us</Link>
                 </li>
                 <li style={{ marginBottom: 10 }}>
-                  <Link to="/JoinUs" style={{ color: "#5b6b77", textDecoration: "none" }}>Join Us</Link>
+                  <Link to="/JoinUs" style={linkStyle}>Join Us</Link>
                 </li>
                 <li style={{ marginBottom: 10 }}>
-                  <Link to="/ContactUs" style={{ color: "#5b6b77", textDecoration: "none" }}>Contact Us</Link>
+                  <Link to="/ContactUs" style={linkStyle}>Contact Us</Link>
                 </li>
                 <li style={{ marginBottom: 10 }}>
-                  <Link to="/VIP" style={{ color: "#5b6b77", textDecoration: "none" }}>Premium Membership</Link>
+                  <Link to="/VIP" style={linkStyle}>Premium Membership</Link>
                 </li>
               </ul>
             </div>
 
             <div>
-              <div style={{ color: "#0b63d6", fontWeight: 800, marginBottom: 12 }}>PRODUCTS</div>
+              <div style={sectionTitleStyle}>PRODUCTS</div>
               <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                <li style={{ marginBottom: 10 }}><Link to="/shoes" style={{ color: "#5b6b77", textDecoration: "none" }}>Shoes</Link></li>
-                <li style={{ marginBottom: 10 }}><Link to="/apparel" style={{ color: "#5b6b77", textDecoration: "none" }}>Apparel</Link></li>
-                <li style={{ marginBottom: 10 }}><Link to="/electronics" style={{ color: "#5b6b77", textDecoration: "none" }}>Electronics</Link></li>
-                <li style={{ marginBottom: 10 }}><Link to="/accessories" style={{ color: "#5b6b77", textDecoration: "none" }}>Accessories</Link></li>
-                <li style={{ marginBottom: 10 }}><Link to="/jewelry" style={{ color: "#5b6b77", textDecoration: "none" }}>Jewellery</Link></li>
-                <li style={{ marginBottom: 10 }}><Link to="/watches" style={{ color: "#5b6b77", textDecoration: "none" }}>Watches</Link></li>
-                <li style={{ marginBottom: 10 }}><Link to="/furniture" style={{ color: "#5b6b77", textDecoration: "none" }}>Furnitures</Link></li>
+                <li style={{ marginBottom: 10 }}><Link to="/shoes" style={linkStyle}>Shoes</Link></li>
+                <li style={{ marginBottom: 10 }}><Link to="/apparel" style={linkStyle}>Apparel</Link></li>
+                <li style={{ marginBottom: 10 }}><Link to="/electronics" style={linkStyle}>Electronics</Link></li>
+                <li style={{ marginBottom: 10 }}><Link to="/accessories" style={linkStyle}>Accessories</Link></li>
+                <li style={{ marginBottom: 10 }}><Link to="/jewelry" style={linkStyle}>Jewellery</Link></li>
+                <li style={{ marginBottom: 10 }}><Link to="/watches" style={linkStyle}>Watches</Link></li>
+                <li style={{ marginBottom: 10 }}><Link to="/furniture" style={linkStyle}>Furnitures</Link></li>
               </ul>
             </div>
           </div>
         </div>
 
         {/* Divider */}
-        <div style={{ height: 1, background: "rgba(0,0,0,0.04)", margin: "24px 0" }} />
+        <div style={dividerStyle} />
 
         {/* Bottom legal / language row */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-          <div style={{ display: "flex", gap: 12, alignItems: "center", color: "#6b7280", fontSize: 13 }}>
+        <div style={bottomRowStyle}>
+          <div style={bottomLeftStyle}>
             <div style={{ cursor: "pointer" }}>EN ▾</div>
             <Link to="/PrivatePolicy" style={{ color: "#6b7280", textDecoration: "none" }}>Privacy Policy</Link>
             <Link to="/TermsAndConditions" style={{ color: "#6b7280", textDecoration: "none" }}>Terms and Conditions</Link>
           </div>
 
-          <div style={{ color: "#9aa4b2", fontSize: 13, textAlign: "center", flex: "0 0 auto" }}>
+          <div style={bottomCenterStyle}>
             © 2026 KEYMUS ECOMMERCE. All Rights Reserved.
           </div>
         </div>
@@ -114,24 +223,7 @@ export default function Footer() {
         onClick={handleOpenCustomerService}
         aria-label="Contact customer service"
         type="button"
-        style={{
-          position: "fixed",
-          right: 20,
-          bottom: 22,
-          width: 56,
-          height: 56,
-          borderRadius: "50%",
-          background: "#0b63d6",
-          border: "none",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          boxShadow: "0 4px 12px rgba(11, 99, 214, 0.3)",
-          zIndex: 9999,
-          cursor: "pointer",
-          padding: 0,
-          transition: "background 0.2s ease, box-shadow 0.2s ease",
-        }}
+        style={chatBtnStyle}
         onMouseEnter={(e) => {
           e.currentTarget.style.background = "#0a52b8";
           e.currentTarget.style.boxShadow = "0 6px 16px rgba(11, 99, 214, 0.4)";
@@ -141,16 +233,7 @@ export default function Footer() {
           e.currentTarget.style.boxShadow = "0 4px 12px rgba(11, 99, 214, 0.3)";
         }}
       >
-        <img 
-          src={chatIcon} 
-          alt="Customer Service" 
-          style={{ 
-            width: 32, 
-            height: 32,
-            objectFit: "contain",
-            display: "block"
-          }} 
-        />
+        <img src={chatIcon} alt="Customer Service" style={chatIconStyle} />
       </button>
 
       <CustomerServiceModal open={csOpen} onClose={handleCloseCustomerService} />
