@@ -4,26 +4,17 @@
   <meta charset="utf-8" />
   <meta name="robots" content="noindex">
   <title>Redirecting…</title>
-  <style>html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;color:#333;display:flex;align-items:center;justify-content:center}</style>
+  <style>html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#333;display:flex;align-items:center;justify-content:center}</style>
 </head>
 <body>
   <div>Redirecting…</div>
   <script>
     (function () {
       var base = '/keymusecommerce';
-      // If already inside project path, do nothing
       if (location.pathname === base || location.pathname.indexOf(base + '/') === 0) return;
-      // Build target preserving path, query and hash
       var target = base + (location.pathname === '/' ? '/' : location.pathname) + (location.search || '') + (location.hash || '');
-      // Try to fetch index.html and replace document so SPA can mount (avoids a separate redirect)
-      fetch(base + '/index.html').then(function(r){ return r.text(); }).then(function(html){
-        document.open(); document.write(html); document.close();
-        // update URL to the requested path under /keymusecommerce
-        history.replaceState({}, '', target);
-      }).catch(function(){
-        // fallback: redirect
-        location.replace(target);
-      });
+      // Simple navigation (no fetch). Guaranteed to work.
+      location.replace(target);
     })();
   </script>
 </body>
