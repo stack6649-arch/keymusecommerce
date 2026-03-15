@@ -386,7 +386,7 @@ export default function Withdraw() {
           <div>
             <div className="balance-row" role="region" aria-label="Available amount">
               <div className="balance-meta">
-                <div className="balance-label">Available amount (USD)</div>
+                <div className="balance-label">Available amount </div>
                 <div className="balance-value" aria-live="polite">{formattedBalance}</div>
               </div>
             </div>
@@ -395,7 +395,7 @@ export default function Withdraw() {
           <div>
             <div className="frozen-card" role="status" aria-label="Frozen balance">
               <div className="frozen-value">{formattedFrozen}</div>
-              <div className="frozen-label">Frozen balance (USD)</div>
+              <div className="frozen-label">Frozen balance </div>
             </div>
           </div>
         </div>
