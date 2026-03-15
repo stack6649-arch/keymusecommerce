@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 // Use GA Agency logo asset as requested
-import logo from "../assets/images/header/logo.a8b5034.png";
+import logo from "../assets/images/header/keymusecommerce.jpg";
 import chatIcon from "../assets/images/dashboard/chat-DWOAIdKh.png";
 import CustomerServiceModal from "./CustomerServiceModal.jsx";
 
