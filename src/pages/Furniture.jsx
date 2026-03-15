@@ -232,8 +232,8 @@ export default function Shoes() {
 
           <div className="shoes-hero-right">
             <div className="shoes-hero-right-inner">
-              <div className="shoes-kicker">FURNITURES</div>
-              <h1 className="shoes-hero-title">Authentic furnitures from the best brands.</h1>
+              <div className="shoes-kicker">FURNITURE</div>
+              <h1 className="shoes-hero-title">Authentic furniture from the best brands.</h1>
               <p className="shoes-hero-sub">Updated weekly with new flash sales from some of the world's best brands.</p>
             </div>
 
