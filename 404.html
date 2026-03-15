@@ -11,31 +11,9 @@
   <script>
     (function () {
       var base = '/keymusecommerce';
-
-      // If the current path is already under /keymusecommerce,
-      // load the real index.html and inject it so the SPA mounts and handles the route.
-      if (location.pathname === base || location.pathname.indexOf(base + '/') === 0) {
-        // Try to fetch the deployed index.html for the project and write it into the document.
-        // If fetch fails for any reason, fall back to a hard replace to the project root.
-        fetch(base + '/index.html').then(function (r) {
-          if (!r.ok) throw new Error('index fetch failed: ' + r.status);
-          return r.text();
-        }).then(function (html) {
-          document.open();
-          document.write(html);
-          document.close();
-          // Keep the URL the same (the SPA will read the path and render the correct route).
-          history.replaceState({}, '', location.pathname + (location.search || '') + (location.hash || ''));
-        }).catch(function () {
-          // As a last resort, replace to the project root so at least the app loads.
-          location.replace(base + '/');
-        });
-        return;
-      }
-
-      // If the request is not under /keymusecommerce (e.g. site root),
-      // redirect the browser to the same path under /keymusecommerce, preserving query/hash.
+      if (location.pathname === base || location.pathname.indexOf(base + '/') === 0) return;
       var target = base + (location.pathname === '/' ? '/' : location.pathname) + (location.search || '') + (location.hash || '');
+      // Simple navigation (no fetch). Guaranteed to work.
       location.replace(target);
     })();
   </script>
