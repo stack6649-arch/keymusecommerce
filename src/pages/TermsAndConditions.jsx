@@ -103,7 +103,7 @@ export default function TermsAndConditions() {
             through our marketing services. It's important to understand that the referral commissions provided to our
             users are solely for quality control purposes, ensuring a smooth work-flow for all parties involved. We do
             not endorse leaving pending product data submissions, as the responsibility falls back on the referrer.
-            GA-Agency eagerly awaits your presence on our working platform and sincerely appreciates your choice to
+            KEYMUS-Ecommerce eagerly awaits your presence on our working platform and sincerely appreciates your choice to
             join us.
           </p>
 
@@ -269,11 +269,11 @@ export default function TermsAndConditions() {
           <div style={{ marginTop: 6 }}>
             <div style={{ marginBottom: 6 }}>
               To resolve a complaint regarding the Site or to receive further information regarding the use of the Site,
-              please contact us at: <strong>customer-support@ga-agency-uk.cc</strong>
+              please contact us at: <strong>customer-support@keymus-ecommerce-uk.cc</strong>
             </div>
 
             <div style={{ marginTop: 12 }}>
-              <div>© GA-Agency</div>
+              <div>© KEYMUS-Ecommerce</div>
               <div>33 Broadwick Street, Soho, W1F 0DQ</div>
             </div>
           </div>
