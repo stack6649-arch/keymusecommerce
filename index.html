@@ -12,6 +12,58 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 
+    <!--
+      Embedded responsive defaults to avoid horizontal overflow on mobile.
+      This keeps the fix self-contained in index.html so you don't need an index.css file.
+    -->
+    <style>
+      /* Global box-sizing so width calculations are predictable */
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+
+      /* Ensure the page fits the device width and hide accidental horizontal overflow */
+      html, body {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden; /* hides right-hand gutter caused by overflowing elements */
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      /* Make media responsive */
+      img, picture, svg, video, iframe {
+        max-width: 100%;
+        height: auto;
+        display: block;
+      }
+
+      /* Ensure main content containers don't exceed viewport width */
+      #root, main, header, footer, .page, .container {
+        width: 100%;
+        max-width: 100%;
+      }
+
+      /* Provide safe-area inset support for iOS notch devices while preserving your .app-shell class */
+      .app-shell {
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+
+      /* Optional: reduce large fixed-width elements on very small screens (tweak per need) */
+      @media (max-width: 520px) {
+        /* If you have any components that set a large fixed width, override here */
+        .responsive-fix {
+          width: 100% !important;
+          max-width: 100% !important;
+        }
+      }
+    </style>
+
     <title>KEYMUS-ECOMMERCE</title>
   </head>
   <!-- add the app-shell class so safe-area padding is applied -->
