@@ -224,11 +224,11 @@ export default function About() {
             <div className="ga-small-section-title">Our Founder's Story</div>
 
             <div className="ga-paragraph">
-              GA-Agency was founded by experienced e-commerce merchants and startup entrepreneurs who set out to build the tools they once wished they had.
+              KEYMUS-Ecommerce was founded by experienced e-commerce merchants and startup entrepreneurs who set out to build the tools they once wished they had.
             </div>
 
             <div className="ga-paragraph">
-              From the very beginning, the platform achieved product — market fit, attracting a large and passionate community of Shopify brands eager to save time and increase revenue. Backed by Shopify and leading investors, GA-Agency is on a mission to democratize cutting-edge AI and automation — empowering small and medium-sized e-commerce businesses to turn their data into profitability.
+              From the very beginning, the platform achieved product — market fit, attracting a large and passionate community of Shopify brands eager to save time and increase revenue. Backed by Shopify and leading investors, KEYMUS-Ecommerce is on a mission to democratize cutting-edge AI and automation — empowering small and medium-sized e-commerce businesses to turn their data into profitability.
             </div>
 
             <div className="ga-small-section-title">Our Mission</div>
