@@ -26,6 +26,16 @@ export default function App() {
       }
     }
 
+    // Handle redirect from 404.html
+    const params = new URLSearchParams(window.location.search);
+    const redirectPath = params.get('redirect');
+    
+    if (redirectPath && window.location.pathname.includes('index.html')) {
+      // Clean up the URL and redirect to the actual path
+      const cleanPath = redirectPath.replace('/keymusecommerce/', '').replace('/index.html', '');
+      window.history.replaceState({}, document.title, '/keymusecommerce' + cleanPath);
+    }
+
     setIsInitialized(true);
   }, []);
 
