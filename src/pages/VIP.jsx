@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import CustomerServiceModal from "../components/CustomerServiceModal.jsx";
 
 // VIP images (imported from the filenames shown in your screenshots)
 import vipBasic from "../assets/images/vip/download.png";
@@ -99,6 +100,9 @@ export default function VIP() {
   const [selectedIndex, setSelectedIndex] = useState(defaultIndex >= 0 ? defaultIndex : 0);
   const containerRef = useRef(null);
 
+  // Customer service modal open state (added so clicking "UPGRADE" opens the modal)
+  const [csOpen, setCsOpen] = useState(false);
+
   useEffect(() => {
     function handleStorage() {
       try {
@@ -116,12 +120,19 @@ export default function VIP() {
 
   const selected = VIP_LEVELS[selectedIndex];
 
+  // open modal and dispatch legacy event for other listeners
   const openCustomerServiceModal = () => {
     try {
+      setCsOpen(true);
+      // keep the custom event for any other parts of the app that listen to it
       window.dispatchEvent(new CustomEvent("openCustomerService"));
     } catch (err) {
       // noop
     }
+  };
+
+  const handleCloseCustomerService = () => {
+    setCsOpen(false);
   };
 
   // Conservative runtime overlay-hiding fix:
@@ -347,6 +358,11 @@ export default function VIP() {
           <span style={{ marginLeft: 18, color: "#6b7280" }}> </span>
         </div>
       </main>
+
+      {/* Customer service modal mounted for this page.
+          Clicking "UPGRADE" opens this modal via csOpen state.
+          We keep the legacy dispatch for other listeners above. */}
+      <CustomerServiceModal open={csOpen} onClose={handleCloseCustomerService} />
     </div>
   );
 }
