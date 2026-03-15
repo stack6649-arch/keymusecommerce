@@ -302,7 +302,7 @@ export default function TransactionHistory() {
                       <div key={i} className="th-row" role="article" aria-label={`withdraw-${i}`}>
                         <div>{w.createdAt ? fmt(w.createdAt) : w.date ?? ""}</div>
                         <div>{orderText}</div>
-                        <div className="th-amount">USD {w.amount ?? w.value ?? ""}</div>
+                        <div className="th-amount"> {w.amount ?? w.value ?? ""}</div>
                         <div className={statusClass}>
                           {w.status ?? "Unknown"}
                         </div>
@@ -326,7 +326,7 @@ export default function TransactionHistory() {
                       <div key={i} className="th-row" role="article" aria-label={`commission-${i}`}>
                         <div>{c.createdAt ? fmt(c.createdAt) : c.date ?? ""}</div>
                         <div>{orderText}</div>
-                        <div className="th-amount">USD {c.amount ?? c.value ?? ""}</div>
+                        <div className="th-amount"> {c.amount ?? c.value ?? ""}</div>
                         <div className={statusClass}>
                           {c.status ?? "Unknown"}
                         </div>
