@@ -77,8 +77,10 @@ function CustomerServiceWrapper() {
 }
 
 export default function AppRoutes() {
+  // IMPORTANT: set basename to the GitHub Pages subpath so Router matches routes correctly
+  // when the site is served at https://<org-or-user>.github.io/keymusecommerce/
   return (
-    <Router>
+    <Router basename="/keymusecommerce">
       <Routes>
         {/* Root redirect */}
         <Route path="/" element={<Navigate to="/login" />} />
