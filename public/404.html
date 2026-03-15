@@ -1,30 +1,57 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta name="description" content="Redirecting..." />
-    <title>Redirecting...</title>
-    <script>
-      // Redirect all 404s to the root index.html
-      var pathSegments = location.pathname.split('/').filter(Boolean);
-      
-      // If path contains 'keymusecommerce', keep everything after it
-      var keymusecomerceIndex = pathSegments.indexOf('keymusecommerce');
-      if (keymusecomerceIndex !== -1) {
-        // Redirect to index.html in the keymusecommerce directory
-        location.replace(
-          '/keymusecommerce/index.html?redirect=' + 
-          encodeURIComponent(location.pathname + location.search + location.hash)
-        );
-      } else {
-        // Fallback
-        location.replace('/keymusecommerce/');
+<head>
+  <meta charset="utf-8" />
+  <meta name="robots" content="noindex">
+  <title>Redirecting…</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#333;
+    display:flex;align-items:center;justify-content:center}
+  </style>
+</head>
+<body>
+  <div>Redirecting…</div>
+  <script>
+    (function () {
+      // Base path where your app is hosted on GitHub Pages
+      var base = '/keymusecommerce';
+      var pathname = location.pathname || '/';
+      var search = location.search || '';
+      var hash = location.hash || '';
+
+      // If we are already inside the base with a hash, nothing to do
+      if (pathname.indexOf(base + '/') === 0 && hash && hash.length > 1) {
+        // Already a hash route under base, let the app handle it
+        return;
       }
-    </script>
-  </head>
-  <body>
-    Loading...
-  </body>
+
+      // Compute the "app route" part: remove leading base if present
+      var appRoute = pathname;
+      if (appRoute.indexOf(base) === 0) {
+        appRoute = appRoute.slice(base.length);
+      }
+
+      // Ensure we have a leading slash for the route
+      if (!appRoute.startsWith('/')) appRoute = '/' + appRoute;
+
+      // If the route is just / or empty, redirect to root hash
+      var targetHash = appRoute === '/' ? '/' : appRoute;
+
+      // Preserve query and fragment (as part of hash) so original route context remains
+      var extras = '';
+      if (search) extras += search;
+      if (hash) extras += hash;
+
+      // Final redirect -> use hash routing so GitHub Pages serves index.html and client handles navigation
+      var target = base + '/#' + encodeURI(targetHash + extras);
+
+      // If we are already at exactly that URL, do nothing
+      if (location.pathname + location.search + location.hash === target) return;
+
+      // Replace location (no history entry)
+      location.replace(target);
+    })();
+  </script>
+</body>
 </html>
