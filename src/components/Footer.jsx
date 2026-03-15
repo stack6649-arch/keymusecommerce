@@ -28,13 +28,31 @@ export default function Footer() {
     setCsOpen(false);
   };
 
+  // Change this to match the header/logo size exactly (px)
+  const footerLogoHeight = 72;
+
   return (
     <footer style={{ background: "#ffffff", borderTop: "1px solid rgba(0,0,0,0.04)" }} role="contentinfo">
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "36px 20px 14px", boxSizing: "border-box" }}>
         {/* Top content: logo + columns */}
         <div style={{ display: "flex", alignItems: "flex-start", gap: 40, justifyContent: "space-between", flexWrap: "wrap" }}>
           <div style={{ flex: "0 0 220px" }}>
-            <img src={logo} alt="GA Agency" style={{ height: 44, width: "auto", display: "block" }} />
+            <img
+              src={logo}
+              alt="GA Agency"
+              // set explicit height to match screenshot 1; adjust footerLogoHeight value if needed
+              height={footerLogoHeight}
+              style={{
+                width: "auto",
+                display: "block",
+                objectFit: "contain",
+                // remove default image drag border/gap
+                border: 0,
+                lineHeight: 0,
+                padding: 0,
+                margin: 0
+              }}
+            />
             <p style={{ color: "#9aa4b2", marginTop: 14, lineHeight: 1.6, maxWidth: 420, fontSize: 13 }}>
               We are a leading marketing agency that utilizes over 15 years of proprietary data and insights, combined with a team of expert marketers.
             </p>
