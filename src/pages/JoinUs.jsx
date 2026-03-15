@@ -287,7 +287,7 @@ export default function JoinUs() {
             </p>
 
             <p className="ga-paragraph">
-              GA-Agency, the driving force behind global digital excellence, covering every aspect of online customer acquisition and website performance.
+              KEYMUS-Ecommerce, the driving force behind global digital excellence, covering every aspect of online customer acquisition and website performance.
             </p>
 
             <p className="ga-paragraph">
@@ -295,7 +295,7 @@ export default function JoinUs() {
             </p>
 
             <p className="ga-paragraph">
-              Sustainability is a core value of GA-Agency, since the beginning. We aimed to minimize waste and saved 1.8 million items and counting from landfill. We, formed a team of GA-Agency, continue to take efforts in social responsibility, such as minimizing carbon footprint, supporting community services, and charity sales etc.
+              Sustainability is a core value of KEYMUS-Ecommerce, since the beginning. We aimed to minimize waste and saved 1.8 million items and counting from landfill. We, formed a team of KEYMUS-Ecommerce, continue to take efforts in social responsibility, such as minimizing carbon footprint, supporting community services, and charity sales etc.
             </p>
 
             <div className="ga-hero-wrapper">
