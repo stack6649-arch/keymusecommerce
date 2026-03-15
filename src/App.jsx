@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import AppRoutes from "./routes/AppRoutes.jsx";
 import { TaskRecordsProvider } from "./context/TaskRecordsContext";
 import { BalanceProvider } from "./context/balanceContext";
@@ -8,6 +8,32 @@ import { ToastProvider } from "./context/ToastContext";
 import "./index.css";
 
 export default function App() {
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  useEffect(() => {
+    // On app load, check if user is already logged in
+    const token = localStorage.getItem("authToken") || localStorage.getItem("token");
+    const currentUser = localStorage.getItem("currentUser");
+
+    if (token && currentUser) {
+      // User is already logged in, dispatch event to notify components
+      try {
+        const user = JSON.parse(currentUser);
+        window.dispatchEvent(new CustomEvent('authChanged', { detail: { username: user.username } }));
+        window.dispatchEvent(new CustomEvent('userProfileLoaded', { detail: user }));
+      } catch (e) {
+        console.warn("Failed to parse stored user:", e);
+      }
+    }
+
+    setIsInitialized(true);
+  }, []);
+
+  // Don't render until we've checked the session
+  if (!isInitialized) {
+    return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>Loading...</div>;
+  }
+
   return (
     <ToastProvider>
       <ProfileProvider>
