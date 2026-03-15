@@ -274,7 +274,7 @@ export default function Sidebar({ open = false, onClose = () => {} }) {
         aria-hidden={!open}
         aria-label="Site navigation"
       >
-        <div className="ga-sidebar-header">GA AGENCY</div>
+        <div className="ga-sidebar-header">KEYMUS-ECOMMERCE</div>
 
         <div className="ga-sidebar-content">
           {/* Primary group - always visible */}
