@@ -2,7 +2,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import menuIcon from "../assets/images/header/menu.svg";
-import logo from "../assets/images/header/KeyLogo6.png";
+import logo from "../assets/images/header/Keylogo7.png";
 import "./Header.css";
 
 /*
