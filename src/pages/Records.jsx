@@ -476,12 +476,12 @@ const Records = () => {
             <div className="totals">
               <div style={{ width: "100%" }}>
                 <div className="total-label">Total amount</div>
-                <div className="total-value">USD {record.product?.price}</div>
+                <div className="total-value"> {record.product?.price}</div>
               </div>
 
               <div style={{ width: "100%" }}>
                 <div className="total-label">Commission</div>
-                <div className="commission-value">USD {record.product?.commission ?? "0.00"}</div>
+                <div className="commission-value"> {record.product?.commission ?? "0.00"}</div>
               </div>
             </div>
 
