@@ -18,7 +18,12 @@ import "./Header.css";
 export default function Header({ onMenuClick, disableMenu = false, isLoginPage = false }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const handleLogoClick = () => navigate("/dashboard");
+  // When logo is clicked, send authenticated users to /dashboards, otherwise to public /dashboard
+  const handleLogoClick = () => {
+    const token = localStorage.getItem("authToken") || localStorage.getItem("token");
+    if (token) navigate("/dashboards");
+    else navigate("/dashboard");
+  };
 
   // Check if user is authenticated
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -630,7 +635,7 @@ export default function Header({ onMenuClick, disableMenu = false, isLoginPage =
         /* Username button with subtle grey border */
         .ga-user-btn { display:inline-flex; align-items:center; justify-content:center; padding:8px 12px; border-radius:8px; border:1px solid rgba(0,0,0,0.12); background:#fff; color:#111; font-weight:700; cursor:pointer; white-space:nowrap; }
         .ga-login-link { display:inline-block; padding:8px 14px; border-radius:8px; border:none; background:transparent; color:#0645d6; font-weight:700; cursor:pointer; white-space:nowrap; }
-        .ga-right { display:flex; align-items:center; gap:12px; flex:0 0 auto; }
+        .ga-right { display:flex; alignItems:center; gap:12px; flex:0 0 auto; }
 
         /* Ensure center nav doesn't wrap into two lines */
         .nav-center-inner { flex-wrap: nowrap; overflow: visible; }
@@ -666,7 +671,7 @@ export default function Header({ onMenuClick, disableMenu = false, isLoginPage =
                 <button ref={mainBtnRef} className="nav-link main-link" onClick={onMainClick} aria-haspopup="true" aria-expanded={mainOpen}>
                   Main
                 </button>
-                <Link className="nav-link" to="/dashboard">Dashboard</Link>
+                <Link className="nav-link" to="/dashboards">Dashboard</Link>
                 {fixedCenterItems.map((it) => (
                   <Link key={it.to} to={it.to} className="nav-link">{it.label}</Link>
                 ))}
