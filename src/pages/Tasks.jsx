@@ -655,7 +655,7 @@ export default function Tasks() {
                   color: "#111111",
                   fontWeight: 900
                 }}>
-                  USD {product.price}
+                   {product.price}
                 </div>
               </div>
             </div>
@@ -683,7 +683,7 @@ export default function Tasks() {
                   color: "#10B981",
                   fontWeight: 900
                 }}>
-                  USD {product.commission ?? "0.00"}
+                   {product.commission ?? "0.00"}
                 </div>
               </div>
             </div>
@@ -772,12 +772,12 @@ export default function Tasks() {
           <div className="tasks-stats-grid">
             <div className="stat-card white">
               <div className="stat-value">{Number(localCommissionToday).toFixed(2)}</div>
-              <div className="stat-label">TODAY'S EARNINGS (USD)</div>
+              <div className="stat-label">TODAY'S EARNINGS </div>
             </div>
 
             <div className="stat-card white">
               <div className="stat-value">{Number(0).toFixed(2)}</div>
-              <div className="stat-label">FROZEN BALANCE (USD)</div>
+              <div className="stat-label">FROZEN BALANCE </div>
             </div>
           </div>
 
@@ -789,7 +789,7 @@ export default function Tasks() {
             </div>
             <div className="beige-card">
               <div className="beige-value">{Number(0).toFixed(2)}</div>
-              <div className="beige-label">FROZEN BALANCE (USD)</div>
+              <div className="beige-label">FROZEN BALANCE </div>
             </div>
             <div className="beige-card">
               <div className="beige-value">{Number(0).toFixed(2)}</div>
