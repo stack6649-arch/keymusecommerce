@@ -83,13 +83,13 @@ export default function AppRoutes() {
     - URLs will look like:
         https://stack6649-arch.github.io/keymusecommerce/#/shoes
       which avoids 404/file-path issues on refresh.
-    - This change only affects routing mode; all the same routes remain unchanged.
+    - Root (/) now redirects to the public Dashboard page per your request.
   */
   return (
     <Router>
       <Routes>
-        {/* Root redirect */}
-        <Route path="/" element={<Navigate to="/login" />} />
+        {/* Root redirect: always go to public Dashboard page */}
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
         {/* Public auth pages (no Layout so they don't show header/footer) */}
         <Route path="/login" element={<Login />} />
@@ -157,8 +157,8 @@ export default function AppRoutes() {
           <Route path="/customer-service" element={<CustomerServiceWrapper />} />
         </Route>
 
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/login" />} />
+        {/* Fallback: point unknown routes to Dashboard (so users land on Dashboard, not Login) */}
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Router>
   );
