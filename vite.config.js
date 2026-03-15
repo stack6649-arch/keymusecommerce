@@ -29,14 +29,27 @@ export default defineConfig({
     sourcemap: true,
   },
 
-  // Copy _redirects into dist after build (for Netlify/Cloudflare SPA routing)
+  // Copy 404.html and _redirects into dist after build (for GitHub Pages SPA routing)
   closeBundle() {
+    const notFoundPath = resolve(__dirname, "public/404.html");
+    const distNotFoundPath = resolve(__dirname, "dist/404.html");
     const redirectsPath = resolve(__dirname, "_redirects");
-    const distPath = resolve(__dirname, "dist/_redirects");
+    const distRedirectsPath = resolve(__dirname, "dist/_redirects");
+
+    if (existsSync(notFoundPath)) {
+      try {
+        copyFileSync(notFoundPath, distNotFoundPath);
+        console.log("✅ 404.html file copied to dist/");
+      } catch (err) {
+        console.error("❌ Failed to copy 404.html file:", err);
+      }
+    } else {
+      console.warn("⚠️ No 404.html file found at public/ directory.");
+    }
 
     if (existsSync(redirectsPath)) {
       try {
-        copyFileSync(redirectsPath, distPath);
+        copyFileSync(redirectsPath, distRedirectsPath);
         console.log("✅ _redirects file copied to dist/");
       } catch (err) {
         console.error("❌ Failed to copy _redirects file:", err);
