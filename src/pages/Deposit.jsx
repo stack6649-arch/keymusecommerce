@@ -278,7 +278,7 @@ export default function Deposit() {
         {/* Account Balance */}
         <section className="balance-section" aria-label="Account balance">
           <div style={{ flex: 1 }}>
-            <div className="balance-label">Account balance (USD)</div>
+            <div className="balance-label">Account balance </div>
             <div style={{ height: 12 }} />
             <div className="balance-value-row">
               <div className="balance-rail" aria-hidden="true" />
@@ -298,7 +298,7 @@ export default function Deposit() {
 
           <div className="stat-card" role="status" aria-label="Balance due">
             <div className="stat-value">{formattedBalanceDue}</div>
-            <div className="stat-label">Balance due (USD)</div>
+            <div className="stat-label">Balance due </div>
           </div>
         </section>
 
