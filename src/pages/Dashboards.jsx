@@ -63,17 +63,17 @@ function TopStatBox({ accountBalance, commissionToday }) {
     <div className="dashboard-earnings">
       <div className="earn-col">
         <div className="earn-title">Today's earnings</div>
-        <div className="earn-value">USD {Number(commissionToday || 0).toFixed(2)}</div>
+        <div className="earn-value"> {Number(commissionToday || 0).toFixed(2)}</div>
       </div>
 
       <div className="earn-col">
         <div className="earn-title">Yesterday's earnings</div>
-        <div className="earn-value">USD 5.17</div>
+        <div className="earn-value"> 5.17</div>
       </div>
 
       <div className="earn-col">
         <div className="earn-title">Total earnings</div>
-        <div className="earn-value">USD {Number(accountBalance || 0).toFixed(2)}</div>
+        <div className="earn-value"> {Number(accountBalance || 0).toFixed(2)}</div>
       </div>
     </div>
   );
@@ -471,19 +471,19 @@ export default function Dashboards() {
 
               <div className="balance-title">My Balance</div>
               <div className="balance-amount">
-                USD {Number(balance || 0).toFixed(2)}
+                 {Number(balance || 0).toFixed(2)}
               </div>
 
               <div className="balance-row">
 
                 <div className="balance-mini">
                   <div>Frozen Balance</div>
-                  <span>USD {Number(frozenAmount).toFixed(2)}</span>
+                  <span> {Number(frozenAmount).toFixed(2)}</span>
                 </div>
 
                 <div className="balance-mini">
                   <div>Balance Due</div>
-                  <span>USD 0.00</span>
+                  <span> 0.00</span>
                 </div>
 
               </div>
