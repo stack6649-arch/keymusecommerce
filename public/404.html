@@ -11,10 +11,13 @@
   <script>
     (function () {
       var base = '/keymusecommerce';
-      if (location.pathname === base || location.pathname.indexOf(base + '/') === 0) return;
-      var target = base + (location.pathname === '/' ? '/' : location.pathname) + (location.search || '') + (location.hash || '');
-      // Simple navigation (no fetch). Guaranteed to work.
-      location.replace(target);
+      var path = location.pathname;
+      
+      // Only redirect if the path is not already at base or within keymusecommerce
+      if (path !== base && path !== base + '/' && path.indexOf(base + '/') !== 0) {
+        // For 404 errors on routes like /keymusecommerce/shoes, serve index.html
+        location.replace(base + '/index.html' + location.search + location.hash);
+      }
     })();
   </script>
 </body>
