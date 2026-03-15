@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from "react-router-dom";
+import { HashRouter as Router, Routes, Route, Navigate, useParams } from "react-router-dom";
 
 // Public pages
 import Login from "../pages/Login.jsx";
@@ -77,10 +77,16 @@ function CustomerServiceWrapper() {
 }
 
 export default function AppRoutes() {
-  // IMPORTANT: set basename to the GitHub Pages subpath so Router matches routes correctly
-  // when the site is served at https://<org-or-user>.github.io/keymusecommerce/
+  /*
+    Use HashRouter for GitHub Pages compatibility.
+
+    - URLs will look like:
+        https://stack6649-arch.github.io/keymusecommerce/#/shoes
+      which avoids 404/file-path issues on refresh.
+    - This change only affects routing mode; all the same routes remain unchanged.
+  */
   return (
-    <Router basename="/keymusecommerce">
+    <Router>
       <Routes>
         {/* Root redirect */}
         <Route path="/" element={<Navigate to="/login" />} />
