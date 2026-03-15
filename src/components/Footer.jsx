@@ -36,7 +36,7 @@ export default function Footer() {
           <div style={{ flex: "0 0 220px" }}>
             <img src={logo} alt="GA Agency" style={{ height: 44, width: "auto", display: "block" }} />
             <p style={{ color: "#9aa4b2", marginTop: 14, lineHeight: 1.6, maxWidth: 420, fontSize: 13 }}>
-              We are a leading marketing agency that utilizes over 10 years of proprietary data and insights, combined with a team of expert marketers.
+              We are a leading marketing agency that utilizes over 15 years of proprietary data and insights, combined with a team of expert marketers.
             </p>
           </div>
 
@@ -86,7 +86,7 @@ export default function Footer() {
           </div>
 
           <div style={{ color: "#9aa4b2", fontSize: 13, textAlign: "center", flex: "0 0 auto" }}>
-            © 2026 GA Agency UK. All Rights Reserved.
+            © 2026 KEYMUS ECOMMERCE. All Rights Reserved.
           </div>
         </div>
       </div>
