@@ -1,24 +1,30 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="robots" content="noindex">
-  <title>Redirecting…</title>
-  <style>html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#333;display:flex;align-items:center;justify-content:center}</style>
-</head>
-<body>
-  <div>Redirecting…</div>
-  <script>
-    (function () {
-      var base = '/keymusecommerce';
-      var path = location.pathname;
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="Redirecting..." />
+    <title>Redirecting...</title>
+    <script>
+      // Redirect all 404s to the root index.html
+      var pathSegments = location.pathname.split('/').filter(Boolean);
       
-      // Only redirect if the path is not already at base or within keymusecommerce
-      if (path !== base && path !== base + '/' && path.indexOf(base + '/') !== 0) {
-        // For 404 errors on routes like /keymusecommerce/shoes, serve index.html
-        location.replace(base + '/index.html' + location.search + location.hash);
+      // If path contains 'keymusecommerce', keep everything after it
+      var keymusecomerceIndex = pathSegments.indexOf('keymusecommerce');
+      if (keymusecomerceIndex !== -1) {
+        // Redirect to index.html in the keymusecommerce directory
+        location.replace(
+          '/keymusecommerce/index.html?redirect=' + 
+          encodeURIComponent(location.pathname + location.search + location.hash)
+        );
+      } else {
+        // Fallback
+        location.replace('/keymusecommerce/');
       }
-    })();
-  </script>
-</body>
+    </script>
+  </head>
+  <body>
+    Loading...
+  </body>
 </html>
