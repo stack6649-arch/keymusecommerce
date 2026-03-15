@@ -94,15 +94,15 @@ export default function PrivatePolicy() {
             lineHeight: 1.6,
           }}
         >
-          <div style={{ ...sectionSpacing, fontWeight: 800 }}>Privacy Policy of GA-Agency</div>
+          <div style={{ ...sectionSpacing, fontWeight: 800 }}>Privacy Policy of KEYMUS-Ecommerce</div>
           <div style={{ marginBottom: 8, fontWeight: 700 }}>Last updated: Feb 10, 2025</div>
 
           <p style={{ marginTop: 0, marginBottom: 20 }}>
-            This Privacy Policy covers the practices of GA-Agency, registered in Melbourne, Australia.
+            This Privacy Policy covers the practices of KEYMUS-Ecommerce, registered in Melbourne, Australia.
           </p>
 
           <p style={{ ...sectionSpacing }}>
-            This Privacy Policy applies to our website (https://ga-agency-uk.com/), marketing activities for our various brands,
+            This Privacy Policy applies to our website (https://keymus-ecommerce-uk.com/), marketing activities for our various brands,
             our interactions with members of the public (e.g., within our recruitment process), and with those acting in a
             professional capacity (e.g., when enquiring about, researching, reporting on, assessing, or engaging in business
             discussions). This Privacy Policy details the types of personal information we may collect about you when you interact
@@ -113,16 +113,16 @@ export default function PrivatePolicy() {
 
           <h4 style={{ margin: "8px 0 8px 0", fontSize: 15 }}>Marketing and Advertising Services:</h4>
           <p style={{ margin: "6px 0 20px 0" }}>
-            This Privacy Policy does not extend to the activities GA-Agency undertakes on behalf of its clients, wherein it acts
+            This Privacy Policy does not extend to the activities KEYMUS-Ecommerce undertakes on behalf of its clients, wherein it acts
             as a service provider. If you have inquiries about the processing we undertake for any of our clients or wish to assert
             your rights regarding that processing, please contact the relevant client directly.
           </p>
 
           <h4 style={{ margin: "8px 0 8px 0", fontSize: 15 }}>Employment:</h4>
           <p style={{ margin: "6px 0 20px 0" }}>
-            This Privacy Policy does not encompass any data processing carried out by GA-Agency in connection with employment by or
-            the supply of contracted services to GA-Agency or its subsidiaries. Please contact your local Human Resources Office
-            or the Data Protection Office (if no longer in employment with GA-Agency) using the contact details below for assistance
+            This Privacy Policy does not encompass any data processing carried out by KEYMUS-Ecommerce in connection with employment by or
+            the supply of contracted services to KEYMUS-Ecommerce or its subsidiaries. Please contact your local Human Resources Office
+            or the Data Protection Office (if no longer in employment with KEYMUS-Ecommerce) using the contact details below for assistance
             in these matters.
           </p>
 
@@ -171,24 +171,24 @@ export default function PrivatePolicy() {
           </p>
 
           <p style={{ margin: "6px 0 20px 0" }}>
-            For example, if GA-Agency sells or merges any of its businesses (including any of our affiliates, divisions, and business units)
+            For example, if KEYMUS-Ecommerce sells or merges any of its businesses (including any of our affiliates, divisions, and business units)
             or assets, applies for loans, or opens bank accounts, we may disclose your personal information as part of that transaction,
             including to the prospective buyer or partner, lender, or bank, as the case may be. We may share your personal information if
             there is a similar change to our corporate structure. We may also share your information with others as part of certain due
-            diligence processes. We also share information for the purpose of management and administration of GA-Agency business.
+            diligence processes. We also share information for the purpose of management and administration of KEYMUS-Ecommerce business.
           </p>
 
           <h3 style={{ marginTop: 8, marginBottom: 12 }}>Your Rights over Your Personal Information</h3>
 
           <h4 style={{ margin: "8px 0 8px 0", fontSize: 15 }}>Opting Out of Interest-Based Advertising:</h4>
           <p style={{ margin: "6px 0 20px 0" }}>
-            GA-Agency enables users to opt-out from certain uses of information in a digital environment. If you want to opt-out from
+            KEYMUS-Ecommerce enables users to opt-out from certain uses of information in a digital environment. If you want to opt-out from
             our solutions from the browser you are currently using, click here and our systems will attempt to place an opt-out cookie
             on your computer.
           </p>
 
           <p style={{ margin: "6px 0 20px 0" }}>
-            While GA-Agency does not currently respond to Do Not Track signals, when our systems detect the presence of our opt-out cookie
+            While KEYMUS-Ecommerce does not currently respond to Do Not Track signals, when our systems detect the presence of our opt-out cookie
             or a mobile o/s opt-out indicator, our solutions will stop engaging in IBA for the opted-out browser or device. And if we have
             linked two or more browsers or devices as described above, our systems will attempt to sever the link for the opted-out browser
             or device.
@@ -218,21 +218,21 @@ export default function PrivatePolicy() {
           <h3 style={{ marginTop: 8, marginBottom: 12 }}>How We Protect Your Personal Information</h3>
 
           <p style={{ margin: "6px 0 20px 0" }}>
-            GA-Agency has reasonable security measures in place to help protect personal data from loss, misuse, unauthorized access, disclosure,
+            GKEYMUS-Ecommerce has reasonable security measures in place to help protect personal data from loss, misuse, unauthorized access, disclosure,
             alteration, and destruction.
           </p>
 
           <p style={{ margin: "6px 0 20px 0" }}>
-            GA-Agency has implemented reasonable, industry-standard security policies, standards, and practices designed to protect information
+            KEYMUS-Ecommerce has implemented reasonable, industry-standard security policies, standards, and practices designed to protect information
             from internal and external threats. The degree of protection for each piece of information is based on the risk and consequences
-            associated with having that information compromised. While no security measures will provide for absolute security, all GA-Agency
-            employees responsible for the management of information have the responsibility to adhere to GA-Agency documented security controls,
+            associated with having that information compromised. While no security measures will provide for absolute security, all KEYMUS-Ecommerce
+            employees responsible for the management of information have the responsibility to adhere to KEYMUS-Ecommerce documented security controls,
             which are developed commensurate with the understood risk.
           </p>
 
           <h3 style={{ marginTop: 8, marginBottom: 12 }}>Our Responsibility for Website Links</h3>
           <p style={{ margin: "6px 0 20px 0" }}>
-            This Privacy Policy is limited to the personal data collected by GA-Agency. We provide links within this site to other websites,
+            This Privacy Policy is limited to the personal data collected by KEYMUS-Ecommerce. We provide links within this site to other websites,
             including social media sites such as Facebook, Twitter, and LinkedIn. If you follow these links, your use of these sites will be
             governed by their applicable user and privacy notices since their data practices fall outside the scope of this Privacy Policy. We
             have no responsibility for or control over the information collected by any third-party website, and we cannot be responsible for
@@ -264,12 +264,12 @@ export default function PrivatePolicy() {
 
           <h3 style={{ marginTop: 8, marginBottom: 12 }}>Contact Us</h3>
           <p style={{ margin: "6px 0 20px 0" }}>
-            If you have any questions or concerns about our Privacy Policy, please contact us at: <strong>customer-support@ga-agency-uk.cc</strong>
+            If you have any questions or concerns about our Privacy Policy, please contact us at: <strong>customer-support@keymus-ecommerce-uk.cc</strong>
           </p>
 
           <div style={{ marginTop: 6 }}>
             <div style={{ marginBottom: 6 }}>
-              © GA-Agency
+              © KEYMUS-Ecommerce
             </div>
             <div>Offices: 33 Broadwick Street, Soho, W1F 0DQ</div>
           </div>
@@ -282,11 +282,11 @@ export default function PrivatePolicy() {
           </p>
 
           <p style={{ margin: "6px 0 18px 0" }}>
-            If you have any questions or concerns about our Privacy Policy, please contact us at: <strong>customer-support@ga-agency-uk.cc</strong>
+            If you have any questions or concerns about our Privacy Policy, please contact us at: <strong>customer-support@keymus-ecommerce-uk.cc</strong>
           </p>
 
           <div style={{ marginTop: 12 }}>
-            <div>© GA-Agency</div>
+            <div>© KEYMUS-Ecommerce</div>
             <div>Offices: 33 Broadwick Street, Soho, W1F 0DQ</div>
           </div>
         </div>
