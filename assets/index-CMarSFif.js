@@ -160,14 +160,14 @@ Error generating stack: `+i.message+`
           flex-direction: column;
           font-family: var(--sidebar-font);
           -webkit-font-smoothing: antialiased;
-          overflow: visible; /* no internal scrollbar */
+          overflow: visible; /* no internal scrollbar on panel itself */
         }
 
-        /* Header single-line */
+        /* Header single-line - reduced height for better mobile fit */
         .ga-sidebar-header {
-          padding: 18px 22px;
+          padding: 12px 18px;
           font-weight: 900;
-          font-size: 40px;
+          font-size: 28px;
           color: var(--sidebar-text);
           box-sizing: border-box;
           border-bottom: 3px solid var(--sidebar-sep); /* bold separator under header */
@@ -180,7 +180,8 @@ Error generating stack: `+i.message+`
         /* Content area constrained to 75% of viewport height (top) */
         .ga-sidebar-content {
           height: 75vh;
-          overflow: visible; /* no internal scrolling */
+          overflow: auto; /* allow scrolling so all items are reachable on mobile */
+          -webkit-overflow-scrolling: touch;
           display: flex;
           flex-direction: column;
         }
@@ -241,6 +242,7 @@ Error generating stack: `+i.message+`
 
         .ga-tail {
           margin-top: 8px;
+          padding-bottom: 12px; /* ensure last tail item isn't clipped and remains clickable */
         }
 
         .ga-public-items {
@@ -258,7 +260,7 @@ Error generating stack: `+i.message+`
 
         /* Small devices adjustments */
         @media (max-width: 420px) {
-          .ga-sidebar-header { font-size: 36px; padding: 14px 16px; }
+          .ga-sidebar-header { font-size: 30px; padding: 10px 14px; } /* slightly different mobile tuning */
           .ga-list li { padding: 12px 16px; font-size: 12px; }
           .ga-sidebar-content { height: 72vh; }
           .ga-sidebar-bottom-space { height: 28vh; }
@@ -2848,4 +2850,4 @@ ${r}`,document.body.appendChild(n)}catch(a){console.error("Failed to show overla
 ${a}`)}),window.addEventListener("unhandledrejection",t=>{var n;const r=t.reason||"Unhandled rejection",a=((n=t.reason)==null?void 0:n.stack)||"";console.error("Unhandled rejection:",t),e("Unhandled Promise Rejection",`${String(r)}
 
 ${a}`)})}Xy();Pc(document.getElementById("root")).render(o.jsx(Je.StrictMode,{children:o.jsx(Yy,{children:o.jsx(Qy,{})})}));
-//# sourceMappingURL=index-CY57tUzO.js.map
+//# sourceMappingURL=index-CMarSFif.js.map
