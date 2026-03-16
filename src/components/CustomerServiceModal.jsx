@@ -3,9 +3,9 @@ import csImage from "../assets/images/Cs.jpg";
 
 export default function CustomerServiceModal({ open, onClose }) {
   const [links, setLinks] = useState({
-    telegram1: "",
-    telegram2: "",
-    customerService: "",
+    telegram: "",
+    whatsapp: "",
+    customerServiceUrl: "",
   });
 
   useEffect(() => {
@@ -14,13 +14,13 @@ export default function CustomerServiceModal({ open, onClose }) {
       .then((res) => res.json())
       .then((data) => {
         setLinks({
-          telegram1: data.telegram1 || "",
-          telegram2: data.telegram2 || "",
-          customerService: data.whatsapp || "",
+          telegram: data.telegram1 || data.telegram2 || "",
+          whatsapp: data.whatsapp || "",
+          customerServiceUrl: data.customerService || "",
         });
       })
       .catch(() => {
-        setLinks({ telegram1: "", telegram2: "", customerService: "" });
+        setLinks({ telegram: "", whatsapp: "", customerServiceUrl: "" });
       });
   }, [open]);
 
@@ -139,9 +139,17 @@ export default function CustomerServiceModal({ open, onClose }) {
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 0, padding: "8px 0" }}>
-            {/* Customer Service (moved to 1st position) */}
+            {/* 1st: Customer Service */}
             <button
               onClick={() => {
+                // If backend provides a direct customer service URL, open that.
+                if (links.customerServiceUrl) {
+                  window.open(links.customerServiceUrl, "_blank");
+                  onClose();
+                  return;
+                }
+
+                // Fallback: use in-app sequence chat behaviour (requires logged-in user)
                 const username = localStorage.getItem("user");
 
                 if (!username) {
@@ -168,7 +176,6 @@ export default function CustomerServiceModal({ open, onClose }) {
                 outline: "none",
                 textAlign: "left",
                 transition: "all 0.2s ease",
-                borderBottom: "1px solid rgba(11, 99, 214, 0.08)",
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = "rgba(11, 99, 214, 0.08)";
@@ -184,11 +191,11 @@ export default function CustomerServiceModal({ open, onClose }) {
               {arrowIcon}
             </button>
 
-            {/* WhatsApp (moved to 2nd position) */}
+            {/* 2nd: Whatsapp */}
             <button
               onClick={() => {
-                if (links.customerService) {
-                  window.open(links.customerService, "_blank");
+                if (links.whatsapp) {
+                  window.open(links.whatsapp, "_blank");
                   onClose();
                 }
               }}
@@ -199,8 +206,8 @@ export default function CustomerServiceModal({ open, onClose }) {
                 background: "transparent",
                 border: "none",
                 padding: "16px 22px",
-                cursor: links.customerService ? "pointer" : "not-allowed",
-                opacity: links.customerService ? 1 : 0.5,
+                cursor: links.whatsapp ? "pointer" : "not-allowed",
+                opacity: links.whatsapp ? 1 : 0.5,
                 fontSize: 15,
                 fontWeight: 600,
                 color: "#071e2f",
@@ -210,7 +217,7 @@ export default function CustomerServiceModal({ open, onClose }) {
                 transition: "all 0.2s ease",
               }}
               onMouseEnter={(e) => {
-                if (links.customerService) {
+                if (links.whatsapp) {
                   e.currentTarget.style.background = "rgba(11, 99, 214, 0.08)";
                   e.currentTarget.style.paddingLeft = "26px";
                 }
@@ -219,18 +226,18 @@ export default function CustomerServiceModal({ open, onClose }) {
                 e.currentTarget.style.background = "transparent";
                 e.currentTarget.style.paddingLeft = "22px";
               }}
-              disabled={!links.customerService}
+              disabled={!links.whatsapp}
             >
               {avatar}
-              <span style={{ flex: "0 1 auto" }} data-i18n="WhatsApp">WhatsApp</span>
+              <span style={{ flex: "0 1 auto" }} data-i18n="Whatsapp">Whatsapp</span>
               {arrowIcon}
             </button>
 
-            {/* Telegram 1 (moved to 3rd) */}
+            {/* 3rd: Telegram */}
             <button
               onClick={() => {
-                if (links.telegram1) {
-                  window.open(links.telegram1, "_blank");
+                if (links.telegram) {
+                  window.open(links.telegram, "_blank");
                   onClose();
                 }
               }}
@@ -241,18 +248,17 @@ export default function CustomerServiceModal({ open, onClose }) {
                 background: "transparent",
                 border: "none",
                 padding: "16px 22px",
-                cursor: links.telegram1 ? "pointer" : "not-allowed",
-                opacity: links.telegram1 ? 1 : 0.5,
+                cursor: links.telegram ? "pointer" : "not-allowed",
+                opacity: links.telegram ? 1 : 0.5,
                 fontSize: 15,
                 fontWeight: 600,
                 color: "#071e2f",
-                borderBottom: "1px solid rgba(11, 99, 214, 0.08)",
                 outline: "none",
                 textAlign: "left",
                 transition: "all 0.2s ease",
               }}
               onMouseEnter={(e) => {
-                if (links.telegram1) {
+                if (links.telegram) {
                   e.currentTarget.style.background = "rgba(11, 99, 214, 0.08)";
                   e.currentTarget.style.paddingLeft = "26px";
                 }
@@ -261,49 +267,7 @@ export default function CustomerServiceModal({ open, onClose }) {
                 e.currentTarget.style.background = "transparent";
                 e.currentTarget.style.paddingLeft = "22px";
               }}
-              disabled={!links.telegram1}
-            >
-              {avatar}
-              <span style={{ flex: "0 1 auto" }} data-i18n="Telegram">Telegram</span>
-              {arrowIcon}
-            </button>
-
-            {/* Telegram 2 (kept) */}
-            <button
-              onClick={() => {
-                if (links.telegram2) {
-                  window.open(links.telegram2, "_blank");
-                  onClose();
-                }
-              }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                width: "100%",
-                background: "transparent",
-                border: "none",
-                padding: "16px 22px",
-                cursor: links.telegram2 ? "pointer" : "not-allowed",
-                opacity: links.telegram2 ? 1 : 0.5,
-                fontSize: 15,
-                fontWeight: 600,
-                color: "#071e2f",
-                borderBottom: "1px solid rgba(11, 99, 214, 0.08)",
-                outline: "none",
-                textAlign: "left",
-                transition: "all 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                if (links.telegram2) {
-                  e.currentTarget.style.background = "rgba(11, 99, 214, 0.08)";
-                  e.currentTarget.style.paddingLeft = "26px";
-                }
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "transparent";
-                e.currentTarget.style.paddingLeft = "22px";
-              }}
-              disabled={!links.telegram2}
+              disabled={!links.telegram}
             >
               {avatar}
               <span style={{ flex: "0 1 auto" }} data-i18n="Telegram">Telegram</span>
