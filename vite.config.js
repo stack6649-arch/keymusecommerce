@@ -6,7 +6,8 @@ import { copyFileSync, existsSync } from "fs";
 export default defineConfig({
   // Set base so assets load correctly when served from:
   // https://stack6649-arch.github.io/keymusecommerce
-  base: "/keymusecommerce/",
+  // Permanent fix for custom domain / GitHub Pages: use a relative base so assets are referenced as ./assets/...
+  base: "./",
 
   plugins: [react()],
   resolve: {
