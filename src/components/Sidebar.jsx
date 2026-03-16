@@ -52,7 +52,7 @@ export default function Sidebar({ open = false, onClose = () => {} }) {
     { label: "ACCESSORIES", to: "/accessories" },
     { label: "JEWELLERY", to: "/jewelry" },
     { label: "WATCHES", to: "/watches" },
-    { label: "FURNITURES", to: "/furniture" },
+    { label: "FURNITURE", to: "/furniture" },
   ];
 
   // Protected routes - ONLY SHOW IF AUTHENTICATED
