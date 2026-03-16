@@ -21,7 +21,7 @@ export default function Header({ onMenuClick, disableMenu = false, isLoginPage =
   // When logo is clicked, send authenticated users to /dashboards, otherwise to public /dashboard
   const handleLogoClick = () => {
     const token = localStorage.getItem("authToken") || localStorage.getItem("token");
-    if (token) navigate("/dashboards");
+    if (token) navigate("/dashboard");
     else navigate("/dashboard");
   };
 
