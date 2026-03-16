@@ -139,7 +139,94 @@ export default function CustomerServiceModal({ open, onClose }) {
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 0, padding: "8px 0" }}>
-            {/* Telegram 1 */}
+            {/* Customer Service (moved to 1st position) */}
+            <button
+              onClick={() => {
+                const username = localStorage.getItem("user");
+
+                if (!username) {
+                  alert("Username not found — user must be logged in.");
+                  return;
+                }
+
+                const chatUrl = `https://sequence-chat.onrender.com/?user=${encodeURIComponent(username)}`;
+                window.open(chatUrl, "_blank");
+                onClose();
+              }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                width: "100%",
+                background: "transparent",
+                border: "none",
+                padding: "16px 22px",
+                cursor: "pointer",
+                opacity: 1,
+                fontSize: 15,
+                fontWeight: 600,
+                color: "#071e2f",
+                outline: "none",
+                textAlign: "left",
+                transition: "all 0.2s ease",
+                borderBottom: "1px solid rgba(11, 99, 214, 0.08)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(11, 99, 214, 0.08)";
+                e.currentTarget.style.paddingLeft = "26px";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.paddingLeft = "22px";
+              }}
+            >
+              {avatar}
+              <span style={{ flex: "0 1 auto" }} data-i18n="Customer Service">Customer Service</span>
+              {arrowIcon}
+            </button>
+
+            {/* WhatsApp (moved to 2nd position) */}
+            <button
+              onClick={() => {
+                if (links.customerService) {
+                  window.open(links.customerService, "_blank");
+                  onClose();
+                }
+              }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                width: "100%",
+                background: "transparent",
+                border: "none",
+                padding: "16px 22px",
+                cursor: links.customerService ? "pointer" : "not-allowed",
+                opacity: links.customerService ? 1 : 0.5,
+                fontSize: 15,
+                fontWeight: 600,
+                color: "#071e2f",
+                borderBottom: "1px solid rgba(11, 99, 214, 0.08)",
+                outline: "none",
+                textAlign: "left",
+                transition: "all 0.2s ease",
+              }}
+              onMouseEnter={(e) => {
+                if (links.customerService) {
+                  e.currentTarget.style.background = "rgba(11, 99, 214, 0.08)";
+                  e.currentTarget.style.paddingLeft = "26px";
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.paddingLeft = "22px";
+              }}
+              disabled={!links.customerService}
+            >
+              {avatar}
+              <span style={{ flex: "0 1 auto" }} data-i18n="WhatsApp">WhatsApp</span>
+              {arrowIcon}
+            </button>
+
+            {/* Telegram 1 (moved to 3rd) */}
             <button
               onClick={() => {
                 if (links.telegram1) {
@@ -181,7 +268,7 @@ export default function CustomerServiceModal({ open, onClose }) {
               {arrowIcon}
             </button>
 
-            {/* Telegram 2 */}
+            {/* Telegram 2 (kept) */}
             <button
               onClick={() => {
                 if (links.telegram2) {
@@ -220,50 +307,6 @@ export default function CustomerServiceModal({ open, onClose }) {
             >
               {avatar}
               <span style={{ flex: "0 1 auto" }} data-i18n="Telegram">Telegram</span>
-              {arrowIcon}
-            </button>
-
-            {/* Customer Service */}
-            <button
-              onClick={() => {
-                const username = localStorage.getItem("user");
-
-                if (!username) {
-                  alert("Username not found — user must be logged in.");
-                  return;
-                }
-
-                const chatUrl = `https://sequence-chat.onrender.com/?user=${encodeURIComponent(username)}`;
-                window.open(chatUrl, "_blank");
-                onClose();
-              }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                width: "100%",
-                background: "transparent",
-                border: "none",
-                padding: "16px 22px",
-                cursor: "pointer",
-                opacity: 1,
-                fontSize: 15,
-                fontWeight: 600,
-                color: "#071e2f",
-                outline: "none",
-                textAlign: "left",
-                transition: "all 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "rgba(11, 99, 214, 0.08)";
-                e.currentTarget.style.paddingLeft = "26px";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "transparent";
-                e.currentTarget.style.paddingLeft = "22px";
-              }}
-            >
-              {avatar}
-              <span style={{ flex: "0 1 auto" }} data-i18n="Customer Service">Customer Service</span>
               {arrowIcon}
             </button>
           </div>
