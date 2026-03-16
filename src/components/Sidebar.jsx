@@ -162,14 +162,14 @@ export default function Sidebar({ open = false, onClose = () => {} }) {
           flex-direction: column;
           font-family: var(--sidebar-font);
           -webkit-font-smoothing: antialiased;
-          overflow: visible; /* no internal scrollbar */
+          overflow: visible; /* no internal scrollbar on panel itself */
         }
 
-        /* Header single-line */
+        /* Header single-line - reduced height for better mobile fit */
         .ga-sidebar-header {
-          padding: 18px 22px;
+          padding: 12px 18px;
           font-weight: 900;
-          font-size: 40px;
+          font-size: 28px;
           color: var(--sidebar-text);
           box-sizing: border-box;
           border-bottom: 3px solid var(--sidebar-sep); /* bold separator under header */
@@ -182,7 +182,8 @@ export default function Sidebar({ open = false, onClose = () => {} }) {
         /* Content area constrained to 75% of viewport height (top) */
         .ga-sidebar-content {
           height: 75vh;
-          overflow: visible; /* no internal scrolling */
+          overflow: auto; /* allow scrolling so all items are reachable on mobile */
+          -webkit-overflow-scrolling: touch;
           display: flex;
           flex-direction: column;
         }
@@ -243,6 +244,7 @@ export default function Sidebar({ open = false, onClose = () => {} }) {
 
         .ga-tail {
           margin-top: 8px;
+          padding-bottom: 12px; /* ensure last tail item isn't clipped and remains clickable */
         }
 
         .ga-public-items {
@@ -260,7 +262,7 @@ export default function Sidebar({ open = false, onClose = () => {} }) {
 
         /* Small devices adjustments */
         @media (max-width: 420px) {
-          .ga-sidebar-header { font-size: 36px; padding: 14px 16px; }
+          .ga-sidebar-header { font-size: 30px; padding: 10px 14px; } /* slightly different mobile tuning */
           .ga-list li { padding: 12px 16px; font-size: 12px; }
           .ga-sidebar-content { height: 72vh; }
           .ga-sidebar-bottom-space { height: 28vh; }
