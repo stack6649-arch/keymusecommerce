@@ -44,7 +44,7 @@ export default function Header({ onMenuClick, disableMenu = false, isLoginPage =
     { label: "Accessories", to: "/accessories" },
     { label: "Jewellery", to: "/jewelry" },
     { label: "Watches", to: "/watches" },
-    { label: "Furnitures", to: "/furniture" },
+    { label: "Furniture", to: "/furniture" },
   ];
 
   const fixedCenterItems = [{ label: "★ Premium Membership", to: "/vip", star: true }];
