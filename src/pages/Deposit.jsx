@@ -314,7 +314,7 @@ export default function Deposit() {
 
           <aside className="contact-card" role="region" aria-label="Customer service hours">
             <div>
-              <div className="contact-hours-title">Monday to Friday,</div>
+              <div className="contact-hours-title">Monday to Sunday,</div>
               <div className="contact-hours">10AM to 10PM</div>
               <div className="contact-desc">
                 Our dedicated team are available to answer all your questions. This is our operating time, if you get in touch outside of these hours, we will respond as quickly as possible when operation is back.
