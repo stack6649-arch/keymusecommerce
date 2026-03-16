@@ -52,8 +52,8 @@ export default function Header({ onMenuClick, disableMenu = false, isLoginPage =
   // Main dropdown sections - ONLY SHOW IF AUTHENTICATED
   const protectedMainSections = [
     {
-      id: "access",
-      title: "Access",
+      id: "asset",
+      title: "Asset",
       items: [
         { label: "Access", to: "/tasks" },
         { label: "Top Up", to: "/deposit" },
