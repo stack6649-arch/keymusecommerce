@@ -404,9 +404,15 @@ const Records = () => {
     if (isFrozenDisplay) displayStatusText = "Frozen";
     else if (isTopInPendingGroup) displayStatusText = "Pending";
 
-    // Decide badge color and text color
-    const badgeColor = isFrozenDisplay ? "#ff6b6b" : (String(displayStatusText).toLowerCase() === "pending" ? "#FCD34D" : (record.status === "Completed" ? START_BLUE : "#8fadc7"));
-    const badgeTextColor = isFrozenDisplay ? "#ffffff" : (String(displayStatusText).toLowerCase() === "pending" ? "#1f2937" : "#ffffff");
+    // Determine pill CSS class (use CSS classes rather than inline styles so Records.css controls colors)
+    const pillClass =
+      isFrozenDisplay
+        ? "status-pill status-frozen"
+        : String(displayStatusText).toLowerCase() === "pending"
+          ? "status-pill status-pending"
+          : record.status === "Completed"
+            ? "status-pill status-success"
+            : "status-pill";
 
     const showSubmitButton = (() => {
       // Only show submit button on:
@@ -495,12 +501,10 @@ const Records = () => {
               <div className="meta-label">Status</div>
               <div style={{ minWidth: 90, display: "flex", justifyContent: "flex-end" }}>
                 <div
-                  className="status-pill"
+                  className={pillClass}
                   style={{
                     textTransform: "uppercase",
                     fontSize: 12,
-                    background: badgeColor,
-                    color: badgeTextColor,
                     padding: "6px 12px",
                     borderRadius: 12,
                     fontWeight: 800,
