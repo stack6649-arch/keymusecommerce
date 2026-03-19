@@ -4,6 +4,10 @@
    - Prevent long product/brand names from overflowing into other columns by truncating with ellipsis
    - Keep all previous layout, spacing and colors intact
    - Add responsive clamps so titles don't cross the page on mobile
+   - Minor status color changes per request:
+     * Completed status uses green (instead of blue/black)
+     * Frozen status uses a reddish pill with white text
+     * Pending status remains yellow with dark text
 */
 
 :root{
@@ -193,14 +197,22 @@
 }
 
 /* specific status colors */
+/* Pending: keep the yellow with darker text for contrast */
 .status-pending {
   background: var(--pending-yellow);
   color: #7a5c00;
 }
 
+/* Completed / Success: use green (as requested) with white text for contrast */
 .status-success {
-  background: var(--success-gray);
-  color: #7f8b95;
+  background: var(--commission-green);
+  color: #ffffff;
+}
+
+/* Frozen: reddish pill with white text */
+.status-frozen {
+  background: #ff6b6b;
+  color: #ffffff;
 }
 
 /* Totals block (Total amount / Commission) */
