@@ -9,28 +9,22 @@ import startingIcon from "../assets/images/tabBar/icon30.png";
 import recordsIcon from "../assets/images/tabBar/records.png";
 
 /*
-  Records.jsx - optimized for instant UX
+  Records.jsx
 
-  Key changes:
-  - Keep original logic, polling and submission flows unchanged.
-  - Adapted markup and class names for the new Records.css to match the screenshots exactly:
-    - card layout with left image, center title/quantity and right metadata + CTA
-    - brand pill, status pills, totals and CTA button (Proceed to Submit)
-  - Visual changes are only styling/markup to match screens. Business logic unchanged.
-  - Ensure created time and a real order/task number are always shown (falling back to other fields when necessary).
-
-  New behavior requested & implemented:
-  - When there is a combo group (records sharing comboGroupId) and that combo contains at least one Pending item,
-    the group is shown under the Pending tab. The top product in the combo (oldest by createdAt) is treated as the
-    submit candidate: it always appears above its combo-mates, shows the yellow "PENDING" pill and will render the
-    submit button (when canSubmit is true). All other products in that combo are shown immediately below the top item
-    and display the red "FROZEN" pill (no submit button). Other view behavior remains unchanged.
+  Behavior implemented:
+  - Groups records by comboGroupId.
+  - For any combo group that contains at least one Pending item, the group is considered a "pending group".
+  - For pending groups with 2+ members:
+      * The first member by createdAt (oldest) is the "top" item: it shows the yellow PENDING pill and (when allowed) the submit button.
+      * All other members of the same group are shown immediately after the top item and display the red FROZEN pill (no submit button).
+  - Completed items show a green pill.
+  - No inline styles override the pill color; CSS classes are used so Records.css controls colors.
+  - All other app logic/flows preserved.
 */
 
 const tabs = ["All", "Pending", "Completed"];
 
 const START_BLUE = "#1fb6fc";
-const BLACK_BG = "#071e3d";
 
 function SpinnerOverlay({ show }) {
   if (!show) return null;
@@ -59,11 +53,7 @@ function SpinnerOverlay({ show }) {
           animation: "spin 0.8s linear infinite"
         }}
       />
-      <style>
-        {`
-          @keyframes spin { 100% { transform: rotate(360deg); } }
-        `}
-      </style>
+      <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
@@ -127,29 +117,20 @@ const Records = () => {
   const { records, submitTaskRecord, fetchTaskRecords, addTaskRecord, hasPendingTask } = useTaskRecords();
   const { balance, commissionToday, refreshProfile } = useBalance();
 
-  // displayRecords is local state used for immediate rendering.
-  // It is seeded from context.records or from localStorage cache "taskRecords".
+  // displayRecords seeded from context or localStorage
   const [displayRecords, setDisplayRecords] = useState(() => {
     try {
       const cached = localStorage.getItem("taskRecords");
       if (cached) return JSON.parse(cached);
     } catch (e) { /* ignore */ }
-    // fallback to context records (may be empty initially)
     return records || [];
   });
 
-  // spinner is short-lived (max 2000ms) to avoid long blocking UI
   const [showSpinner, setShowSpinner] = useState(false);
   const [submitting, setSubmitting] = useState({});
   const [submitted, setSubmitted] = useState({});
   const [greyToast, setGreyToast] = useState({ show: false, message: "" });
 
-  const recordsRef = useRef(displayRecords);
-  useEffect(() => {
-    recordsRef.current = displayRecords;
-  }, [displayRecords]);
-
-  // Keep context.records in sync with local displayRecords when context updates.
   useEffect(() => {
     if (Array.isArray(records) && records.length > 0) {
       setDisplayRecords(records);
@@ -160,7 +141,6 @@ const Records = () => {
 
   const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 
-  // Visibility/focus refresh: light background refresh when tab regains focus
   useEffect(() => {
     const onFocus = () => {
       if (fetchTaskRecords) fetchTaskRecords().catch(() => {});
@@ -177,35 +157,26 @@ const Records = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Initial short background refresh: visible spinner capped at 2000ms.
+  // initial background refresh (spinner capped)
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      // If we already have cached data to show, avoid showing a long spinner.
       const hasCached = Array.isArray(displayRecords) && displayRecords.length > 0;
       if (!hasCached) setShowSpinner(true);
 
-      // run fetchTaskRecords but don't block the UI longer than 2 seconds
       const MAX_VISIBLE_MS = 2000;
       const start = Date.now();
 
       try {
         if (fetchTaskRecords) {
-          // fire fetch (don't await forever)
           const fetchPromise = fetchTaskRecords();
-          // race with timeout to ensure we never block more than MAX_VISIBLE_MS
           const race = Promise.race([
             fetchPromise,
             new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), MAX_VISIBLE_MS))
           ]);
-          try {
-            await race;
-          } catch (e) {
-            // timeout or fetch error -> ignore, record context may still update later
-          }
+          try { await race; } catch (e) { /* ignore */ }
         }
       } finally {
-        // ensure spinner hides within MAX_VISIBLE_MS (even if fetchTaskRecords hangs)
         const elapsed = Date.now() - start;
         const remain = Math.max(0, MAX_VISIBLE_MS - elapsed);
         await sleep(remain);
@@ -213,37 +184,23 @@ const Records = () => {
       }
     })();
 
-    return () => {
-      cancelled = true;
-    };
-    // run once on mount
+    return () => { cancelled = true; }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-
-  // When navigating to the Records route specifically, do a short eager refresh (not blocking UI)
   useEffect(() => {
     let mounted = true;
     (async () => {
       if (location.pathname !== "/records") return;
-      // if we already have data, do a background fetch without spinner
       try {
-        if (fetchTaskRecords) {
-          await fetchTaskRecords();
-        }
-      } catch (e) { /* ignore */ }
-      if (mounted) {
-        // context.records effect above will sync displayRecords and localStorage
-      }
+        if (fetchTaskRecords) await fetchTaskRecords();
+      } catch (e) {}
+      if (mounted) {}
     })();
-
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
-  // Regular polling for freshness (runs after initial load). Polling does not block UI.
   useEffect(() => {
     const iv = setInterval(() => {
       if (fetchTaskRecords) fetchTaskRecords().catch(() => {});
@@ -251,26 +208,83 @@ const Records = () => {
     return () => clearInterval(iv);
   }, [fetchTaskRecords]);
 
-  // Helper: group all records by comboGroupId and sort groups by createdAt ascending
-  function getAllComboGroups(recordsList) {
+  // Group records by comboGroupId and sort each group ascending by createdAt
+  function groupByCombo(recordsList) {
     const groups = {};
     for (const rec of recordsList) {
-      if (rec.comboGroupId) {
-        if (!groups[rec.comboGroupId]) groups[rec.comboGroupId] = [];
-        groups[rec.comboGroupId].push(rec);
-      }
+      const gid = rec.comboGroupId;
+      if (!gid) continue;
+      if (!groups[gid]) groups[gid] = [];
+      groups[gid].push(rec);
     }
     Object.values(groups).forEach(arr =>
-      arr.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+      arr.sort((a, b) => new Date(a.createdAt || a.startedAt || 0) - new Date(b.createdAt || b.startedAt || 0))
     );
     return groups;
   }
 
-  const getRecordKey = (record, i) => {
-    if (record.isCombo && typeof record.comboIndex !== "undefined") {
-      return `${record.taskCode || record._id || "noid"}-combo-${record.comboIndex}`;
+  const comboGroupsAll = groupByCombo(displayRecords);
+
+  // pendingGroupIds: groups that contain at least one Pending member
+  const pendingGroupIds = new Set();
+  Object.entries(comboGroupsAll).forEach(([groupId, members]) => {
+    const hasPending = members.some(m => String(m.status || "").toLowerCase() === "pending");
+    if (hasPending) pendingGroupIds.add(groupId);
+  });
+
+  // Filter records by tab. For Pending tab include items that are pending OR belong to a pending combo group.
+  const filteredRecords = (displayRecords || []).filter((record) => {
+    if (activeTab === "All") return true;
+    if (activeTab === "Pending") {
+      if (String(record.status || "").toLowerCase() === "pending") return true;
+      if (record.comboGroupId && pendingGroupIds.has(record.comboGroupId)) return true;
+      return false;
     }
-    return record.taskCode || record._id || `idx-${i}`;
+    return (record.status && record.status.toLowerCase() === activeTab.toLowerCase());
+  });
+
+  // Build frozenMap and topMap: for pending groups with >=2 members, first member is top, others frozen
+  const frozenMap = {};
+  const topMap = {};
+  Object.entries(comboGroupsAll).forEach(([groupId, members]) => {
+    if (!pendingGroupIds.has(groupId)) return;
+    if (!members || members.length < 2) return;
+    const topRec = members[0];
+    const topKey = topRec && (topRec.taskCode || topRec._id);
+    if (topKey) topMap[groupId] = topKey;
+    for (let idx = 1; idx < members.length; idx++) {
+      const rec = members[idx];
+      const key = rec && (rec.taskCode || rec._id);
+      if (key) frozenMap[key] = true;
+    }
+  });
+
+  const byDateDesc = (x, y) => new Date(y.startedAt || y.createdAt || 0) - new Date(x.startedAt || x.createdAt || 0);
+
+  // Build sortedRecords so pending groups appear with top first then frozen members, then the rest by date desc
+  const remaining = [...filteredRecords];
+  const priorityList = [];
+
+  // Add pending groups in insertion order
+  Array.from(pendingGroupIds).forEach((groupId) => {
+    const members = comboGroupsAll[groupId] || [];
+    members.forEach((member) => {
+      const idx = remaining.findIndex((r) => (r.taskCode || r._id) === (member.taskCode || member._id));
+      if (idx !== -1) {
+        priorityList.push(remaining[idx]);
+        remaining.splice(idx, 1);
+      }
+    });
+  });
+
+  remaining.sort(byDateDesc);
+  const sortedRecords = [...priorityList, ...remaining];
+
+  const getRecordImage = (product) => {
+    if (product && typeof product.image === "string" && product.image.trim() !== "" && product.image !== "null") {
+      return product.image;
+    }
+    return "/assets/images/products/default.png";
   };
 
   const showGrey = (message, duration = 1600) => {
@@ -281,156 +295,59 @@ const Records = () => {
   const handleSubmit = async (task) => {
     if (task.isCombo && task.canSubmit && balance < 0) {
       showGrey("Insufficient Balance.");
-      setTimeout(() => {
-        navigate("/deposit");
-      }, 1600);
+      setTimeout(() => navigate("/deposit"), 1600);
       return;
     }
-    setSubmitting((prev) => ({ ...prev, [task.taskCode]: true }));
-    setSubmitted((prev) => ({ ...prev, [task.taskCode]: false }));
+    setSubmitting(prev => ({ ...prev, [task.taskCode]: true }));
+    setSubmitted(prev => ({ ...prev, [task.taskCode]: false }));
     setTimeout(async () => {
       const result = await submitTaskRecord(task.taskCode);
-      setSubmitting((prev) => ({ ...prev, [task.taskCode]: false }));
+      setSubmitting(prev => ({ ...prev, [task.taskCode]: false }));
       if (!result.success && result.mustDeposit) {
         showGrey("Insufficient Balance.");
-        setTimeout(() => {
-          navigate("/deposit");
-        }, 1600);
+        setTimeout(() => navigate("/deposit"), 1600);
         return;
       }
       if (!result.success) {
         alert(result.message || "Failed to submit task.");
       } else {
-        setSubmitted((prev) => ({ ...prev, [task.taskCode]: true }));
+        setSubmitted(prev => ({ ...prev, [task.taskCode]: true }));
         try { await refreshProfile(); } catch (e) {}
         if (fetchTaskRecords) await fetchTaskRecords();
-        setTimeout(() => {
-          setSubmitted((prev) => ({ ...prev, [task.taskCode]: false }));
-        }, 1500);
+        setTimeout(() => setSubmitted(prev => ({ ...prev, [task.taskCode]: false })), 1500);
       }
-    }, 300); // small debounce (not 3s) to speed UI responsiveness
-  };
-
-  // Build general combo groups from all records (used to determine combo membership & top-of-group)
-  const comboGroupsAll = getAllComboGroups(displayRecords);
-
-  // Determine which groups have at least one pending item -> these groups should be shown under Pending tab
-  const pendingGroupIds = new Set();
-  Object.entries(comboGroupsAll).forEach(([groupId, members]) => {
-    if (members.some(m => String(m.status).toLowerCase() === "pending")) {
-      pendingGroupIds.add(groupId);
-    }
-  });
-
-  // Filter records by tab
-  // Important: for the Pending tab include any record that is pending OR is part of a combo group that has a pending item.
-  const filteredRecords = (displayRecords || []).filter((record) => {
-    if (activeTab === "All") return true;
-    if (activeTab === "Pending") {
-      if (String(record.status).toLowerCase() === "pending") return true;
-      if (record.comboGroupId && pendingGroupIds.has(record.comboGroupId)) return true;
-      return false;
-    }
-    // Completed or other tabs: match by record.status
-    return (record.status && record.status.toLowerCase() === activeTab.toLowerCase());
-  });
-
-  // Build frozenMap and topMap:
-  // For groups that are in pendingGroupIds and have 2+ members, mark all members except the first (oldest) as frozen.
-  const frozenMap = {};
-  const topMap = {}; // topMap[groupId] = taskCode of top item (oldest)
-  Object.entries(comboGroupsAll).forEach(([groupId, members]) => {
-    if (!pendingGroupIds.has(groupId)) return;
-    if (!members || members.length < 2) return;
-    // members sorted ascending by createdAt in comboGroupsAll
-    topMap[groupId] = members[0] && (members[0].taskCode || members[0]._id);
-    for (let idx = 1; idx < members.length; idx++) {
-      const rec = members[idx];
-      if (rec && rec.taskCode) {
-        frozenMap[rec.taskCode] = true;
-      }
-    }
-  });
-
-  // Build sortedRecords: ensure that for each pending combo group, the top (submit candidate) appears first,
-  // followed by its frozen siblings. Then append remaining records sorted by date desc.
-  const byDateDesc = (x, y) => new Date(y.startedAt || y.createdAt) - new Date(x.startedAt || x.createdAt);
-
-  const remaining = [...filteredRecords];
-
-  const priorityList = [];
-  // For deterministic ordering iterate pending groups and push members if they exist in remaining,
-  // top first then other members in group order.
-  Array.from(pendingGroupIds).forEach((groupId) => {
-    const membersAll = comboGroupsAll[groupId] || [];
-    // iterate members in ascending createdAt order (top first)
-    membersAll.forEach((member) => {
-      // include only if this member is part of filteredRecords (e.g., Pending tab)
-      const idx = remaining.findIndex((x) => (x.taskCode || x._id) === (member.taskCode || member._id));
-      if (idx !== -1) {
-        priorityList.push(remaining[idx]);
-        remaining.splice(idx, 1);
-      }
-    });
-  });
-
-  // Now add any other pending items that are not in groups (these remain in remaining)
-  remaining.sort(byDateDesc);
-
-  const sortedRecords = [...priorityList, ...remaining];
-
-  const getRecordImage = (product) => {
-    if (
-      product &&
-      typeof product.image === "string" &&
-      product.image.trim() !== "" &&
-      product.image !== "null"
-    ) {
-      return product.image;
-    }
-    return "/assets/images/products/default.png";
+    }, 300);
   };
 
   const renderProductRecord = (record, i) => {
-    const isFrozenDisplay = !!frozenMap[record.taskCode];
-    const isTopInPendingGroup =
-      record.comboGroupId && pendingGroupIds.has(record.comboGroupId) && topMap[record.comboGroupId] === (record.taskCode || record._id);
+    const keyId = record.taskCode || record._id || `idx-${i}`;
+    const isFrozenDisplay = !!frozenMap[keyId];
+    const isTopInPendingGroup = !!(record.comboGroupId && pendingGroupIds.has(record.comboGroupId) && topMap[record.comboGroupId] === keyId);
 
-    // Determine displayed status text:
-    // - Frozen group members: "Frozen"
-    // - Top of pending group: show "Pending" (even if underlying status differs)
-    // - Otherwise show record.status
-    let displayStatusText = record.status;
+    let displayStatusText = record.status || "";
     if (isFrozenDisplay) displayStatusText = "Frozen";
     else if (isTopInPendingGroup) displayStatusText = "Pending";
 
-    // Determine pill CSS class (use CSS classes rather than inline styles so Records.css controls colors)
+    // choose pill class (CSS controls colors)
     const pillClass =
-      isFrozenDisplay
-        ? "status-pill status-frozen"
-        : String(displayStatusText).toLowerCase() === "pending"
-          ? "status-pill status-pending"
-          : record.status === "Completed"
-            ? "status-pill status-success"
-            : "status-pill";
+      isFrozenDisplay ? "status-pill status-frozen"
+      : String(displayStatusText).toLowerCase() === "pending" ? "status-pill status-pending"
+      : String(record.status).toLowerCase() === "completed" ? "status-pill status-success"
+      : "status-pill";
 
     const showSubmitButton = (() => {
-      // Only show submit button on:
-      // - Top of pending combo group (isTopInPendingGroup) when canSubmit
-      // - Or non-combo/pending items that are allowed (preserve original behavior)
-      if (submitted[record.taskCode] && record.status === "Completed") return true;
+      if (submitted[keyId] && String(record.status).toLowerCase() === "completed") return true;
       if (record.comboGroupId) {
         return isTopInPendingGroup && record.canSubmit;
       }
-      if (record.status === "Pending" && (!record.isCombo || record.canSubmit)) {
+      if (String(record.status).toLowerCase() === "pending" && (!record.isCombo || record.canSubmit)) {
         return true;
       }
       return false;
     })();
 
-    const isDisabledSubmit = submitting[record.taskCode] || submitted[record.taskCode] || !record.canSubmit;
+    const isDisabledSubmit = submitting[keyId] || submitted[keyId] || !record.canSubmit;
 
-    // Helper to format date similar to screenshot "DD/MM/YYYY, hh:mm:ss pm"
     const formatLocal = (dstr) => {
       if (!dstr) return "";
       try {
@@ -452,29 +369,14 @@ const Records = () => {
       }
     };
 
-    // Ensure we show a real creation datetime by falling back to other timestamps if createdAt is missing
-    const rawDate =
-      record.createdAt ||
-      record.startedAt ||
-      record.completedAt ||
-      record.addedAt ||
-      record.updatedAt ||
-      null;
+    const rawDate = record.createdAt || record.startedAt || record.completedAt || record.addedAt || record.updatedAt || null;
     const displayDate = rawDate ? formatLocal(rawDate) : "N/A";
-
-    // Ensure real task/order number is shown: prefer orderNumber, fall back to taskCode or _id
     const orderNumDisplay = record.orderNumber ?? record.taskCode ?? record._id ?? "N/A";
 
     return (
-      <div
-        key={getRecordKey(record, i)}
-        className="record-card"
-      >
+      <div key={getRecordKey(record, i)} className="record-card" data-frozen={isFrozenDisplay ? "true" : "false"} data-top={isTopInPendingGroup ? "true" : "false"}>
         <div className="record-image-wrap">
-          <img
-            src={getRecordImage(record.product)}
-            alt={record.product?.name}
-          />
+          <img src={getRecordImage(record.product)} alt={record.product?.name} />
         </div>
 
         <div className="record-main">
@@ -500,18 +402,7 @@ const Records = () => {
             <div className="meta-row" style={{ alignItems: "center" }}>
               <div className="meta-label">Status</div>
               <div style={{ minWidth: 90, display: "flex", justifyContent: "flex-end" }}>
-                <div
-                  className={pillClass}
-                  style={{
-                    textTransform: "uppercase",
-                    fontSize: 12,
-                    padding: "6px 12px",
-                    borderRadius: 12,
-                    fontWeight: 800,
-                    display: "inline-block",
-                    lineHeight: 1,
-                  }}
-                >
+                <div className={pillClass} style={{ textTransform: "uppercase", fontSize: 12, padding: "6px 12px", borderRadius: 12, fontWeight: 800, display: "inline-block", lineHeight: 1 }}>
                   {String(displayStatusText || "").toUpperCase()}
                 </div>
               </div>
@@ -530,13 +421,8 @@ const Records = () => {
             </div>
 
             {showSubmitButton && (
-              <button
-                onClick={() => handleSubmit(record)}
-                disabled={isDisabledSubmit}
-                className="proceed-btn"
-                aria-disabled={isDisabledSubmit}
-              >
-                {submitting[record.taskCode] ? "Submitting..." : (submitted[record.taskCode] ? "Submitted" : "Proceed to Submit")}
+              <button onClick={() => handleSubmit(record)} disabled={isDisabledSubmit} className="proceed-btn" aria-disabled={isDisabledSubmit}>
+                {submitting[keyId] ? "Submitting..." : (submitted[keyId] ? "Submitted" : "Proceed to Submit")}
               </button>
             )}
           </div>
@@ -545,11 +431,17 @@ const Records = () => {
     );
   };
 
+  // helper to create stable key
+  function getRecordKey(record, i) {
+    if (record.isCombo && typeof record.comboIndex !== "undefined") {
+      return `${record.taskCode || record._id || "noid"}-combo-${record.comboIndex}`;
+    }
+    return record.taskCode || record._id || `idx-${i}`;
+  }
+
   return (
     <div className="records-container" style={{ minHeight: "100vh", position: "relative", overflowX: "hidden" }}>
-      <style>{`
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-      `}</style>
+      <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
 
       <SpinnerOverlay show={showSpinner} />
       <GreyToast show={greyToast.show} message={greyToast.message} />
