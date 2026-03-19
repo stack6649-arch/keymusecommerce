@@ -5,14 +5,15 @@ import { useBalance } from "../context/balanceContext";
 import "./Records.css";
 
 /*
-  Records.jsx - minimal & robust grouping + debug output
+  Records.jsx
 
-  Behavior:
-  - Group key uses multiple possible fields (comboGroupId, combo_group_id, orderNumber, order_number, comboId, parentComboId).
-  - For any group that contains at least one Pending item and has 2+ members, mark ONLY the FIRST member (oldest) as Frozen.
-  - All records remain visible under the Pending tab; only the status text/pill for the first member changes.
-  - The file prints a debug summary to console so you can see groups and frozen selection.
-  - No other business logic changed.
+  Change implemented (simple heuristic you requested):
+  - After building the final sortedRecords list, scan it for consecutive runs of Pending items.
+  - For every run of 2 or more consecutive Pending records, mark ONLY the FIRST item of the run as "Frozen".
+    The other items in the run remain showing "Pending".
+  - All records remain visible under the Pending tab; only the status word/pill for the first item in each
+    consecutive Pending run changes to "Frozen".
+  - No other logic or behavior was changed.
 */
 
 const tabs = ["All", "Pending", "Completed"];
@@ -171,92 +172,43 @@ export default function Records() {
     }, 300);
   };
 
-  // Robust group key extraction for each record (try several possible fields)
-  function getGroupKeyForRecord(rec) {
-    if (!rec || typeof rec !== "object") return null;
-    return (
-      rec.comboGroupId ??
-      rec.combo_group_id ??
-      rec.comboId ??
-      rec.combo_id ??
-      rec.parentComboId ??
-      rec.parent_combo_id ??
-      rec.orderNumber ??
-      rec.order_number ??
-      null
-    );
-  }
-
+  // group records by combo key (comboGroupId or orderNumber fallback)
   function groupByCombo(recordsList) {
     const groups = {};
     for (const r of recordsList) {
-      const gid = getGroupKeyForRecord(r);
+      const gid = r.comboGroupId ?? r.orderNumber ?? null;
       if (!gid) continue;
       if (!groups[gid]) groups[gid] = [];
       groups[gid].push(r);
     }
-    // sort each group ascending by createdAt (fallbacks included)
     Object.values(groups).forEach((arr) =>
-      arr.sort(
-        (a, b) =>
-          new Date(a.createdAt || a.startedAt || a.addedAt || 0) - new Date(b.createdAt || b.startedAt || b.addedAt || 0)
-      )
+      arr.sort((a, b) => new Date(a.createdAt || a.startedAt || 0) - new Date(b.createdAt || b.startedAt || 0))
     );
     return groups;
   }
 
   const comboGroupsAll = groupByCombo(displayRecords);
 
-  // Identify groups with at least one Pending member
+  // which groups have at least one pending member
   const pendingGroupIds = new Set();
   Object.entries(comboGroupsAll).forEach(([g, members]) => {
     if (members.some((m) => String(m.status || "").toLowerCase() === "pending")) pendingGroupIds.add(g);
   });
 
-  // Filter records for tab (Pending tab includes items pending OR part of pending group)
-  const filteredRecords = (displayRecords || []).filter((rec) => {
+  // Filter records by tab: Pending tab includes items pending OR part of a pending combo group.
+  const filteredRecords = (displayRecords || []).filter((record) => {
     if (activeTab === "All") return true;
     if (activeTab === "Pending") {
-      if (String(rec.status || "").toLowerCase() === "pending") return true;
-      const gid = getGroupKeyForRecord(rec);
-      if (gid && pendingGroupIds.has(gid)) return true;
+      if (String(record.status || "").toLowerCase() === "pending") return true;
+      if ((record.comboGroupId ?? record.orderNumber ?? null) && pendingGroupIds.has(record.comboGroupId ?? record.orderNumber)) return true;
       return false;
     }
-    return rec.status && rec.status.toLowerCase() === activeTab.toLowerCase();
+    return (record.status && record.status.toLowerCase() === activeTab.toLowerCase());
   });
 
-  // NEW: frozenMap marks ONLY the FIRST member (oldest) of any pending combo group that has 2+ members.
-  const frozenMap = {};
-  const debugGroups = {}; // for console output
-  Object.entries(comboGroupsAll).forEach(([groupId, members]) => {
-    // store debug info for console
-    debugGroups[groupId] = members.map((m) => ({
-      taskCode: m.taskCode || m._id || null,
-      status: m.status || null,
-      createdAt: m.createdAt || m.startedAt || null,
-      orderNumber: m.orderNumber || m.order_number || null,
-    }));
-
-    if (!pendingGroupIds.has(groupId)) return;
-    if (!members || members.length < 2) return;
-    // mark only the first (index 0) as frozen
-    const first = members[0];
-    const firstKey = first && (first.taskCode || first._id);
-    if (firstKey) frozenMap[firstKey] = true;
-  });
-
-  // Debug print so you can inspect groups and frozen selection
-  try {
-    console.debug("Records debug groups:", debugGroups);
-    console.debug("Records debug pendingGroupIds:", Array.from(pendingGroupIds));
-    console.debug("Records debug frozenMap keys:", Object.keys(frozenMap));
-  } catch (e) {
-    // ignore
-  }
-
+  // Build initial sortedRecords: bring pending combo groups (group order) first, then the rest by date desc.
   const byDateDesc = (x, y) => new Date(y.startedAt || y.createdAt || 0) - new Date(x.startedAt || x.createdAt || 0);
 
-  // Build sortedRecords: bring pending groups first (group order), then rest by date desc
   const remaining = [...filteredRecords];
   const priorityList = [];
 
@@ -273,6 +225,33 @@ export default function Records() {
 
   remaining.sort(byDateDesc);
   const sortedRecords = [...priorityList, ...remaining];
+
+  // NEW: compute frozenMap using the simple consecutive-pending heuristic:
+  // For each run of consecutive Pending records (in sortedRecords), when run length >= 2,
+  // mark ONLY the first record in that run as frozen.
+  const frozenMap = {};
+  for (let i = 0; i < sortedRecords.length; ) {
+    const record = sortedRecords[i];
+    const status = String(record.status || "").toLowerCase();
+    if (status === "pending") {
+      // start a run
+      let j = i + 1;
+      while (j < sortedRecords.length && String(sortedRecords[j].status || "").toLowerCase() === "pending") {
+        j++;
+      }
+      const runLength = j - i;
+      if (runLength >= 2) {
+        // mark the first item of the run frozen
+        const firstRec = sortedRecords[i];
+        const key = firstRec.taskCode || firstRec._id || `idx-${i}`;
+        frozenMap[key] = true;
+      }
+      // advance to end of run
+      i = j;
+    } else {
+      i++;
+    }
+  }
 
   const getRecordImage = (product) => {
     if (product && typeof product.image === "string" && product.image.trim() !== "" && product.image !== "null") {
@@ -312,7 +291,8 @@ export default function Records() {
   const renderProductRecord = (record, i) => {
     const keyId = record.taskCode || record._id || `idx-${i}`;
     const isFrozenDisplay = !!frozenMap[keyId];
-    // We changed only status text/pill for frozen items, not submit logic
+
+    // Only change status text/pill for frozen items; otherwise leave status as-is
     let displayStatusText = record.status || "";
     if (isFrozenDisplay) displayStatusText = "Frozen";
 
@@ -340,11 +320,7 @@ export default function Records() {
     const orderNumDisplay = record.orderNumber ?? record.taskCode ?? record._id ?? "N/A";
 
     return (
-      <div
-        key={getRecordKey(record, i)}
-        className="record-card"
-        data-frozen={isFrozenDisplay ? "true" : "false"}
-      >
+      <div key={getRecordKey(record, i)} className="record-card" data-frozen={isFrozenDisplay ? "true" : "false"}>
         <div className="record-image-wrap">
           <img src={getRecordImage(record.product)} alt={record.product?.name} />
         </div>
@@ -372,18 +348,7 @@ export default function Records() {
             <div className="meta-row" style={{ alignItems: "center" }}>
               <div className="meta-label">Status</div>
               <div style={{ minWidth: 90, display: "flex", justifyContent: "flex-end" }}>
-                <div
-                  className={pillClass}
-                  style={{
-                    textTransform: "uppercase",
-                    fontSize: 12,
-                    padding: "6px 12px",
-                    borderRadius: 12,
-                    fontWeight: 800,
-                    display: "inline-block",
-                    lineHeight: 1,
-                  }}
-                >
+                <div className={pillClass} style={{ textTransform: "uppercase", fontSize: 12, padding: "6px 12px", borderRadius: 12, fontWeight: 800, display: "inline-block", lineHeight: 1 }}>
                   {String(displayStatusText || "").toUpperCase()}
                 </div>
               </div>
