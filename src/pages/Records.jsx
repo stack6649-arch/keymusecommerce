@@ -11,11 +11,11 @@ import recordsIcon from "../assets/images/tabBar/records.png";
 /*
   Records.jsx
 
-  Behavior implemented:
+  Behavior implemented (updated per your request):
   - Groups records by comboGroupId.
   - For any combo group that contains at least one Pending item, the group is considered a "pending group".
   - For pending groups with 2+ members:
-      * The first member by createdAt (oldest) is the "top" item: it shows the yellow PENDING pill and (when allowed) the submit button.
+      * The last member by createdAt (newest) is the "top" submit candidate: it shows the yellow PENDING pill and (when allowed) the submit button.
       * All other members of the same group are shown immediately after the top item and display the red FROZEN pill (no submit button).
   - Completed items show a green pill.
   - No inline styles override the pill color; CSS classes are used so Records.css controls colors.
@@ -208,7 +208,7 @@ const Records = () => {
     return () => clearInterval(iv);
   }, [fetchTaskRecords]);
 
-  // Group records by comboGroupId and sort each group ascending by createdAt
+  // Group records by comboGroupId and sort each group ascending by createdAt (oldest -> newest)
   function groupByCombo(recordsList) {
     const groups = {};
     for (const rec of recordsList) {
@@ -243,16 +243,20 @@ const Records = () => {
     return (record.status && record.status.toLowerCase() === activeTab.toLowerCase());
   });
 
-  // Build frozenMap and topMap: for pending groups with >=2 members, first member is top, others frozen
+  // Build frozenMap and topMap:
+  // For pending groups with >=2 members, the LAST member (newest) is top (submit candidate),
+  // and all other members are marked frozen.
   const frozenMap = {};
   const topMap = {};
   Object.entries(comboGroupsAll).forEach(([groupId, members]) => {
     if (!pendingGroupIds.has(groupId)) return;
     if (!members || members.length < 2) return;
-    const topRec = members[0];
+    const lastIdx = members.length - 1;
+    const topRec = members[lastIdx];
     const topKey = topRec && (topRec.taskCode || topRec._id);
     if (topKey) topMap[groupId] = topKey;
-    for (let idx = 1; idx < members.length; idx++) {
+    for (let idx = 0; idx < members.length; idx++) {
+      if (idx === lastIdx) continue; // skip the top (last) item
       const rec = members[idx];
       const key = rec && (rec.taskCode || rec._id);
       if (key) frozenMap[key] = true;
@@ -261,20 +265,34 @@ const Records = () => {
 
   const byDateDesc = (x, y) => new Date(y.startedAt || y.createdAt || 0) - new Date(x.startedAt || x.createdAt || 0);
 
-  // Build sortedRecords so pending groups appear with top first then frozen members, then the rest by date desc
+  // Build sortedRecords so each pending group appears with LAST (top) first, then the frozen members,
+  // then the rest of records sorted by date desc.
   const remaining = [...filteredRecords];
   const priorityList = [];
 
-  // Add pending groups in insertion order
   Array.from(pendingGroupIds).forEach((groupId) => {
     const members = comboGroupsAll[groupId] || [];
-    members.forEach((member) => {
-      const idx = remaining.findIndex((r) => (r.taskCode || r._id) === (member.taskCode || member._id));
+    if (!members || members.length === 0) return;
+    const lastIdx = members.length - 1;
+    // push the last (top submit candidate) first if present in remaining
+    const topMember = members[lastIdx];
+    if (topMember) {
+      const idx = remaining.findIndex((r) => (r.taskCode || r._id) === (topMember.taskCode || topMember._id));
       if (idx !== -1) {
         priorityList.push(remaining[idx]);
         remaining.splice(idx, 1);
       }
-    });
+    }
+    // then push the other members (frozen) in ascending order (oldest -> newest), excluding the top already pushed
+    for (let j = 0; j < members.length; j++) {
+      if (j === lastIdx) continue;
+      const mem = members[j];
+      const idx2 = remaining.findIndex((r) => (r.taskCode || r._id) === (mem.taskCode || mem._id));
+      if (idx2 !== -1) {
+        priorityList.push(remaining[idx2]);
+        remaining.splice(idx2, 1);
+      }
+    }
   });
 
   remaining.sort(byDateDesc);
@@ -298,11 +316,12 @@ const Records = () => {
       setTimeout(() => navigate("/deposit"), 1600);
       return;
     }
-    setSubmitting(prev => ({ ...prev, [task.taskCode]: true }));
-    setSubmitted(prev => ({ ...prev, [task.taskCode]: false }));
+    const keyId = task.taskCode || task._id;
+    setSubmitting(prev => ({ ...prev, [keyId]: true }));
+    setSubmitted(prev => ({ ...prev, [keyId]: false }));
     setTimeout(async () => {
       const result = await submitTaskRecord(task.taskCode);
-      setSubmitting(prev => ({ ...prev, [task.taskCode]: false }));
+      setSubmitting(prev => ({ ...prev, [keyId]: false }));
       if (!result.success && result.mustDeposit) {
         showGrey("Insufficient Balance.");
         setTimeout(() => navigate("/deposit"), 1600);
@@ -311,10 +330,10 @@ const Records = () => {
       if (!result.success) {
         alert(result.message || "Failed to submit task.");
       } else {
-        setSubmitted(prev => ({ ...prev, [task.taskCode]: true }));
+        setSubmitted(prev => ({ ...prev, [keyId]: true }));
         try { await refreshProfile(); } catch (e) {}
         if (fetchTaskRecords) await fetchTaskRecords();
-        setTimeout(() => setSubmitted(prev => ({ ...prev, [task.taskCode]: false })), 1500);
+        setTimeout(() => setSubmitted(prev => ({ ...prev, [keyId]: false })), 1500);
       }
     }, 300);
   };
@@ -328,7 +347,6 @@ const Records = () => {
     if (isFrozenDisplay) displayStatusText = "Frozen";
     else if (isTopInPendingGroup) displayStatusText = "Pending";
 
-    // choose pill class (CSS controls colors)
     const pillClass =
       isFrozenDisplay ? "status-pill status-frozen"
       : String(displayStatusText).toLowerCase() === "pending" ? "status-pill status-pending"
