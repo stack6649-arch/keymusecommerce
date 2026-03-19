@@ -68,7 +68,7 @@ function TopStatBox({ accountBalance, commissionToday }) {
 
       <div className="earn-col">
         <div className="earn-title">Yesterday's earnings</div>
-        <div className="earn-value"> </div>
+        <div className="earn-value">0.00</div>
       </div>
 
       <div className="earn-col">
