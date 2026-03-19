@@ -164,7 +164,7 @@
   letter-spacing: 0.02em;
 }
 
-/* Pending: yellow with darker text */
+/* Pending: yellow with darker text (default) */
 .status-pending {
   background: var(--pending-yellow);
   color: #7a5c00;
@@ -172,7 +172,7 @@
 
 /* Frozen: light red background with white text */
 .status-frozen {
-  background: #ffb3b3; /* light red */
+  background: #ffb3b3;
   color: #ffffff;
 }
 
@@ -180,6 +180,33 @@
 .status-success {
   background: var(--commission-green);
   color: #ffffff;
+}
+
+/* Attribute-based overrides (force visuals even if inline styles exist)
+   - If a .record-card has data-frozen="true", force its pill to light-red and hide submit button.
+   - If a .record-card has data-top="true", force its pill to pending yellow.
+*/
+.record-card[data-frozen="true"] .status-pill {
+  background: #ffb3b3 !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+}
+.record-card[data-frozen="true"] .proceed-btn {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.record-card[data-top="true"] .status-pill {
+  background: var(--pending-yellow) !important;
+  color: #7a5c00 !important;
+  border-color: transparent !important;
+}
+
+/* ensure completed still shows green if data-top/data-frozen not present */
+.status-success {
+  background: var(--commission-green) !important;
+  color: #ffffff !important;
 }
 
 .totals {
