@@ -7,11 +7,11 @@ import "./Records.css";
 /*
   Records.jsx
 
-  Minimal change to guarantee:
-  - For consecutive runs of 2+ Pending items:
-    * mark all earlier items in the run as FROZEN (no submit)
-    * ensure the LAST item shows PENDING and will show the submit button (if canSubmit)
-  - Everything else unchanged.
+  Rule implemented exactly as requested:
+  - For each combo group (comboGroupId or orderNumber fallback): if that group contains 2+ items with status "pending",
+    mark all pending members except the newest as FROZEN. The newest pending member remains PENDING and may show the submit button.
+  - All records still appear (Pending tab contains all pending items and group members).
+  - Minimal, safe changes only to the status display & submit-button visibility for frozen vs last-pending items.
 */
 
 const tabs = ["All", "Pending", "Completed"];
@@ -124,7 +124,7 @@ export default function Records() {
 
   useEffect(() => {
     // initial fetch on mount (non-blocking)
-    fetchTaskRecords && fetchTaskRecords().catch(() => {});
+    if (fetchTaskRecords) fetchTaskRecords().catch(() => {});
     // eslint-disable-next-line
   }, []);
 
@@ -170,7 +170,7 @@ export default function Records() {
     }, 300);
   };
 
-  // group records by combo key (comboGroupId or orderNumber fallback)
+  // Build groups by comboGroupId or orderNumber fallback
   function groupByCombo(recordsList) {
     const groups = {};
     for (const r of recordsList) {
@@ -179,6 +179,7 @@ export default function Records() {
       if (!groups[gid]) groups[gid] = [];
       groups[gid].push(r);
     }
+    // sort groups by createdAt/startedAt ascending
     Object.values(groups).forEach((arr) =>
       arr.sort((a, b) => new Date(a.createdAt || a.startedAt || 0) - new Date(b.createdAt || b.startedAt || 0))
     );
@@ -187,33 +188,33 @@ export default function Records() {
 
   const comboGroupsAll = groupByCombo(displayRecords);
 
-  // which groups have at least one pending member
+  // Identify groups where there is at least one pending member
   const pendingGroupIds = new Set();
   Object.entries(comboGroupsAll).forEach(([g, members]) => {
     if (members.some((m) => String(m.status || "").toLowerCase() === "pending")) pendingGroupIds.add(g);
   });
 
-  // Filter records by tab. Pending tab includes items pending OR part of a pending combo group.
-  const filteredRecords = (displayRecords || []).filter((record) => {
+  // Filter by tab. Pending tab includes items with status pending OR items in a group that has at least one pending member.
+  const filteredRecords = (displayRecords || []).filter((r) => {
     if (activeTab === "All") return true;
     if (activeTab === "Pending") {
-      if (String(record.status || "").toLowerCase() === "pending") return true;
-      if ((record.comboGroupId ?? record.orderNumber ?? null) && pendingGroupIds.has(record.comboGroupId ?? record.orderNumber)) return true;
+      if (String(r.status || "").toLowerCase() === "pending") return true;
+      const gid = r.comboGroupId ?? r.orderNumber ?? null;
+      if (gid && pendingGroupIds.has(gid)) return true;
       return false;
     }
-    return (record.status && record.status.toLowerCase() === activeTab.toLowerCase());
+    return r.status && r.status.toLowerCase() === activeTab.toLowerCase();
   });
 
-  // Build initial sortedRecords: bring pending combo groups (group order) first, then the rest by date desc.
+  // Build sortedRecords: bring groups that are pending first (in group order), then the rest by date desc
   const byDateDesc = (x, y) => new Date(y.startedAt || y.createdAt || 0) - new Date(x.startedAt || x.createdAt || 0);
-
   const remaining = [...filteredRecords];
   const priorityList = [];
 
   Array.from(pendingGroupIds).forEach((groupId) => {
     const members = comboGroupsAll[groupId] || [];
     members.forEach((member) => {
-      const idx = remaining.findIndex((r) => (r.taskCode || r._id) === (member.taskCode || member._id));
+      const idx = remaining.findIndex((rr) => (rr.taskCode || rr._id) === (member.taskCode || member._id));
       if (idx !== -1) {
         priorityList.push(remaining[idx]);
         remaining.splice(idx, 1);
@@ -224,38 +225,27 @@ export default function Records() {
   remaining.sort(byDateDesc);
   const sortedRecords = [...priorityList, ...remaining];
 
-  // compute frozenMap and runLastMap using the consecutive-pending heuristic:
-  // For each run of consecutive Pending records (in sortedRecords), when run length >= 2:
-  // - mark ALL items in the run as frozen except the LAST one.
-  // - mark the last item as run-last (so it remains pending and may show submit button).
+  // Now apply the rule: for each group, if group has 2+ pending items, mark all pending members except the newest as frozen.
   const frozenMap = {};
-  const runLastMap = {};
-  for (let i = 0; i < sortedRecords.length; ) {
-    const rec = sortedRecords[i];
-    const status = String(rec.status || "").toLowerCase();
-    if (status === "pending") {
-      let j = i + 1;
-      while (j < sortedRecords.length && String(sortedRecords[j].status || "").toLowerCase() === "pending") {
-        j++;
+  const lastPendingMap = {}; // mark the last pending of the group (newest) so it stays Pending and shows submit
+
+  Object.entries(comboGroupsAll).forEach(([groupId, members]) => {
+    // get members that are pending (case-insensitive)
+    const pendingMembers = members.filter((m) => String(m.status || "").toLowerCase() === "pending");
+    if (pendingMembers.length >= 2) {
+      // sort pendingMembers by createdAt/startedAt ascending to find newest (last)
+      pendingMembers.sort((a, b) => new Date(a.createdAt || a.startedAt || 0) - new Date(b.createdAt || b.startedAt || 0));
+      const last = pendingMembers[pendingMembers.length - 1];
+      const lastKey = last && (last.taskCode || last._id);
+      if (lastKey) lastPendingMap[lastKey] = true;
+      // mark all other pending members as frozen
+      for (let i = 0; i < pendingMembers.length - 1; i++) {
+        const m = pendingMembers[i];
+        const key = m && (m.taskCode || m._id);
+        if (key) frozenMap[key] = true;
       }
-      const runLength = j - i;
-      if (runLength >= 2) {
-        // mark all except last as frozen
-        for (let k = i; k < j - 1; k++) {
-          const r = sortedRecords[k];
-          const key = r.taskCode || r._id || `idx-${k}`;
-          frozenMap[key] = true;
-        }
-        // mark the last item as run-last
-        const lastRec = sortedRecords[j - 1];
-        const lastKey = lastRec.taskCode || lastRec._id || `idx-${j - 1}`;
-        runLastMap[lastKey] = true;
-      }
-      i = j;
-    } else {
-      i++;
     }
-  }
+  });
 
   const getRecordImage = (product) => {
     if (product && typeof product.image === "string" && product.image.trim() !== "" && product.image !== "null") {
@@ -295,12 +285,15 @@ export default function Records() {
   const renderProductRecord = (record, i) => {
     const keyId = record.taskCode || record._id || `idx-${i}`;
     const isFrozenDisplay = !!frozenMap[keyId];
-    const isRunLast = !!runLastMap[keyId];
+    const isLastPending = !!lastPendingMap[keyId];
 
-    // If frozen, override status text to "Frozen"; if run-last, force "Pending"
+    // Determine the displayed status:
+    // - Frozen if isFrozenDisplay
+    // - Force Pending if isLastPending (so it shows PENDING and can show the submit button)
+    // - Otherwise show record.status as-is
     let displayStatusText = record.status || "";
     if (isFrozenDisplay) displayStatusText = "Frozen";
-    else if (isRunLast) displayStatusText = "Pending";
+    else if (isLastPending) displayStatusText = "Pending";
 
     const pillClass =
       isFrozenDisplay ? "status-pill status-frozen"
@@ -308,12 +301,13 @@ export default function Records() {
       : String(record.status).toLowerCase() === "completed" ? "status-pill status-success"
       : "status-pill";
 
+    // Submit button rules:
+    // - If frozen => never show
+    // - If lastPending => show submit when record.canSubmit is truthy
+    // - Otherwise fall back to previous logic
     const showSubmitButton = (() => {
-      // Frozen: never show
       if (isFrozenDisplay) return false;
-      // run-last: show if record.canSubmit true (force even if underlying status was different)
-      if (isRunLast) return !!record.canSubmit;
-      // otherwise fall back to original rules
+      if (isLastPending) return !!record.canSubmit;
       if (submitted[keyId] && String(record.status).toLowerCase() === "completed") return true;
       if (record.comboGroupId) {
         return record.status === "Pending" && record.canSubmit;
@@ -331,7 +325,7 @@ export default function Records() {
     const orderNumDisplay = record.orderNumber ?? record.taskCode ?? record._id ?? "N/A";
 
     return (
-      <div key={getRecordKey(record, i)} className="record-card" data-frozen={isFrozenDisplay ? "true" : "false"} data-run-last={isRunLast ? "true" : "false"}>
+      <div key={getRecordKey(record, i)} className="record-card" data-frozen={isFrozenDisplay ? "true" : "false"} data-last-pending={isLastPending ? "true" : "false"}>
         <div className="record-image-wrap">
           <img src={getRecordImage(record.product)} alt={record.product?.name} />
         </div>
