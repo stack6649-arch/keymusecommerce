@@ -7,13 +7,12 @@ import "./Records.css";
 /*
   Records.jsx
 
-  Change implemented (simple heuristic you requested):
-  - After building the final sortedRecords list, scan it for consecutive runs of Pending items.
-  - For every run of 2 or more consecutive Pending records, mark ONLY the FIRST item of the run as "Frozen".
-    The other items in the run remain showing "Pending".
-  - All records remain visible under the Pending tab; only the status word/pill for the first item in each
-    consecutive Pending run changes to "Frozen".
-  - No other logic or behavior was changed.
+  Minimal update:
+  - Uses the consecutive-pending heuristic you asked for.
+  - For each run of 2+ consecutive Pending items in the rendered list:
+      * Mark ONLY the FIRST item of the run as "Frozen" (status word + frozen pill).
+      * Ensure the LAST item of the run remains "Pending" and shows the submit button (when record.canSubmit).
+  - Everything else (ordering, other logic, CSS usage) remains unchanged.
 */
 
 const tabs = ["All", "Pending", "Completed"];
@@ -195,7 +194,7 @@ export default function Records() {
     if (members.some((m) => String(m.status || "").toLowerCase() === "pending")) pendingGroupIds.add(g);
   });
 
-  // Filter records by tab: Pending tab includes items pending OR part of a pending combo group.
+  // Filter records by tab. Pending tab includes items pending OR part of a pending combo group.
   const filteredRecords = (displayRecords || []).filter((record) => {
     if (activeTab === "All") return true;
     if (activeTab === "Pending") {
@@ -226,10 +225,12 @@ export default function Records() {
   remaining.sort(byDateDesc);
   const sortedRecords = [...priorityList, ...remaining];
 
-  // NEW: compute frozenMap using the simple consecutive-pending heuristic:
-  // For each run of consecutive Pending records (in sortedRecords), when run length >= 2,
-  // mark ONLY the first record in that run as frozen.
+  // NEW: compute frozenMap and runLastMap using the consecutive-pending heuristic:
+  // For each run of consecutive Pending records (in sortedRecords), when run length >= 2:
+  // - mark ONLY the FIRST record of the run as frozen (frozenMap)
+  // - mark the LAST record of the run as run-last (runLastMap) so it always shows Pending and will display the submit button (if canSubmit)
   const frozenMap = {};
+  const runLastMap = {};
   for (let i = 0; i < sortedRecords.length; ) {
     const record = sortedRecords[i];
     const status = String(record.status || "").toLowerCase();
@@ -243,8 +244,12 @@ export default function Records() {
       if (runLength >= 2) {
         // mark the first item of the run frozen
         const firstRec = sortedRecords[i];
-        const key = firstRec.taskCode || firstRec._id || `idx-${i}`;
-        frozenMap[key] = true;
+        const firstKey = firstRec.taskCode || firstRec._id || `idx-${i}`;
+        frozenMap[firstKey] = true;
+        // mark the last item of the run
+        const lastRec = sortedRecords[j - 1];
+        const lastKey = lastRec.taskCode || lastRec._id || `idx-${j - 1}`;
+        runLastMap[lastKey] = true;
       }
       // advance to end of run
       i = j;
@@ -291,8 +296,9 @@ export default function Records() {
   const renderProductRecord = (record, i) => {
     const keyId = record.taskCode || record._id || `idx-${i}`;
     const isFrozenDisplay = !!frozenMap[keyId];
+    const isRunLast = !!runLastMap[keyId];
 
-    // Only change status text/pill for frozen items; otherwise leave status as-is
+    // If frozen, override status text to "Frozen"; otherwise leave status as-is.
     let displayStatusText = record.status || "";
     if (isFrozenDisplay) displayStatusText = "Frozen";
 
@@ -303,6 +309,11 @@ export default function Records() {
       : "status-pill";
 
     const showSubmitButton = (() => {
+      // Keep original submit rules, but allow an override for the last item in a consecutive pending run:
+      if (isRunLast) {
+        // Show the submit button for the run-last only if the record is pending (and respect canSubmit)
+        return String(record.status || "").toLowerCase() === "pending" && !!record.canSubmit;
+      }
       if (submitted[keyId] && String(record.status).toLowerCase() === "completed") return true;
       if (record.comboGroupId) {
         return record.status === "Pending" && record.canSubmit;
@@ -320,7 +331,7 @@ export default function Records() {
     const orderNumDisplay = record.orderNumber ?? record.taskCode ?? record._id ?? "N/A";
 
     return (
-      <div key={getRecordKey(record, i)} className="record-card" data-frozen={isFrozenDisplay ? "true" : "false"}>
+      <div key={getRecordKey(record, i)} className="record-card" data-frozen={isFrozenDisplay ? "true" : "false"} data-run-last={isRunLast ? "true" : "false"}>
         <div className="record-image-wrap">
           <img src={getRecordImage(record.product)} alt={record.product?.name} />
         </div>
