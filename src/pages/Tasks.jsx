@@ -22,8 +22,8 @@ import startButtonImg from "../assets/images/start/startbutton.png";
   - Updated modal font sizes, colors and layout to match the provided screenshot: larger title font, muted grey labels,
     bold numeric/right-side values for Total, commission and order number, larger bright blue submit button with rounded corners.
   - Adjusted created time label, "Order number" label and value fallback logic (uses currentTask.orderNumber if present, otherwise taskCode).
-  - Updated formatDate output to DD/MM/YYYY, hh:mm:ss am/pm (matches screenshot style).
   - Toast now shows only animated bars without text, displays for 1 second, then modal appears.
+  - Modal now constrains height to viewport (max 85vh), content area scrolls when tall, and the submit button is kept visible using a sticky footer.
 */
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://stacksapp-backend-main.onrender.com';
@@ -471,13 +471,18 @@ export default function Tasks() {
             boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
             paddingBottom: 0,
             background: "#ffffff",
-            overflow: "hidden"
+            overflow: "hidden",
+            // New sizing behavior:
+            maxHeight: "85vh",           // constraint so modal never exceeds viewport height
+            display: "flex",
+            flexDirection: "column",
           }}
         >
           {/* Header with title - no close button */}
           <div style={{
             padding: "24px 24px 16px 24px",
-            borderBottom: "1px solid #f0f0f0"
+            borderBottom: "1px solid #f0f0f0",
+            flex: "0 0 auto"
           }}>
             <div style={{
               fontWeight: 900,
@@ -489,209 +494,224 @@ export default function Tasks() {
             </div>
           </div>
 
-          {/* Product image */}
+          {/* Scrollable content area */}
           <div style={{
-            padding: "20px 24px 0 24px"
+            overflowY: "auto",
+            paddingBottom: 12,
+            flex: "1 1 auto",
           }}>
-            <img
-              src={product.image}
-              alt="Product"
-              style={{
-                width: "100%",
-                height: "auto",
-                borderRadius: 16,
-                objectFit: "cover",
-                aspectRatio: "16/9",
-                boxShadow: "0 8px 24px rgba(0,0,0,0.12)"
-              }}
-            />
-          </div>
-
-          {/* Product info section */}
-          <div style={{
-            padding: "20px 24px"
-          }}>
-            {/* Brand badge */}
+            {/* Product image */}
             <div style={{
-              display: "inline-block",
-              background: "#E8DAFF",
-              color: "#7C3AED",
-              borderRadius: 8,
-              padding: "6px 14px",
-              fontSize: 13,
-              fontWeight: 700,
-              marginBottom: 12
+              padding: "20px 24px 0 24px"
             }}>
-              Brand
+              <img
+                src={product.image}
+                alt="Product"
+                style={{
+                  width: "100%",
+                  height: "auto",
+                  borderRadius: 16,
+                  objectFit: "cover",
+                  // limit image height so it doesn't push button off-screen
+                  maxHeight: 260,
+                  display: "block",
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.12)"
+                }}
+              />
             </div>
 
-            {/* Product name */}
+            {/* Product info section */}
             <div style={{
-              fontSize: 20,
-              fontWeight: 900,
-              color: "#111111",
-              marginBottom: 8,
-              lineHeight: "1.2"
+              padding: "20px 24px"
             }}>
-              {product.name}
-            </div>
-
-            {/* Quantity */}
-            <div style={{
-              fontSize: 14,
-              color: "#8a8a8a",
-              marginBottom: 16,
-              fontWeight: 500
-            }}>
-              Quantity: 1
-            </div>
-          </div>
-
-          {/* Details section */}
-          <div style={{
-            padding: "0 24px 20px 24px"
-          }}>
-            {/* Create time row */}
-            <div style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              paddingBottom: 14,
-              borderBottom: "1px solid #f0f0f0",
-              marginBottom: 14
-            }}>
+              {/* Brand badge */}
               <div style={{
-                fontSize: 14,
-                color: "#8a8a8a",
-                fontWeight: 600
+                display: "inline-block",
+                background: "#E8DAFF",
+                color: "#7C3AED",
+                borderRadius: 8,
+                padding: "6px 14px",
+                fontSize: 13,
+                fontWeight: 700,
+                marginBottom: 12
               }}>
-                Create Time
+                Brand
               </div>
+
+              {/* Product name */}
               <div style={{
-                fontSize: 16,
+                fontSize: 20,
+                fontWeight: 900,
                 color: "#111111",
-                fontWeight: 700
+                marginBottom: 8,
+                lineHeight: "1.2"
               }}>
-                {formatDate(product.createdAt || currentTask.createdAt)}
+                {product.name}
               </div>
-            </div>
 
-            {/* Order number row */}
-            <div style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              paddingBottom: 14,
-              borderBottom: "1px solid #f0f0f0",
-              marginBottom: 14
-            }}>
+              {/* Quantity */}
               <div style={{
                 fontSize: 14,
                 color: "#8a8a8a",
-                fontWeight: 600
+                marginBottom: 16,
+                fontWeight: 500
               }}>
-                Order Number
-              </div>
-              <div style={{
-                fontSize: 15,
-                color: "#111111",
-                fontWeight: 800,
-                fontFamily: "monospace",
-                letterSpacing: "0.02em"
-              }}>
-                {orderNumber}
+                Quantity: 1
               </div>
             </div>
 
-            {/* Status row with yellow badge */}
+            {/* Details section */}
             <div style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              paddingBottom: 14,
-              borderBottom: "1px solid #f0f0f0",
-              marginBottom: 14
+              padding: "0 24px 20px 24px"
             }}>
+              {/* Create time row */}
               <div style={{
-                fontSize: 14,
-                color: "#8a8a8a",
-                fontWeight: 600
-              }}>
-                Status
-              </div>
-              <div style={{
-                background: "#FCD34D",
-                color: "#1F2937",
-                borderRadius: 12,
-                padding: "6px 16px",
-                fontSize: 14,
-                fontWeight: 800,
-              }}>
-                PENDING
-              </div>
-            </div>
-
-            {/* Total amount section */}
-            <div style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-              paddingBottom: 12,
-              borderBottom: "1px solid #f0f0f0",
-              marginBottom: 12
-            }}>
-              <div style={{
-                fontSize: 14,
-                color: "#8a8a8a",
-                fontWeight: 600
-              }}>
-                Total amount
-              </div>
-              <div style={{
-                textAlign: "right"
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                paddingBottom: 14,
+                borderBottom: "1px solid #f0f0f0",
+                marginBottom: 14
               }}>
                 <div style={{
-                  fontSize: 20,
+                  fontSize: 14,
+                  color: "#8a8a8a",
+                  fontWeight: 600
+                }}>
+                  Create Time
+                </div>
+                <div style={{
+                  fontSize: 16,
                   color: "#111111",
-                  fontWeight: 900
+                  fontWeight: 700
                 }}>
-                   {product.price}
+                  {formatDate(product.createdAt || currentTask.createdAt)}
                 </div>
               </div>
-            </div>
 
-            {/* Commission section */}
-            <div style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-              paddingBottom: 20,
-              marginBottom: 4
-            }}>
+              {/* Order number row */}
               <div style={{
-                fontSize: 14,
-                color: "#8a8a8a",
-                fontWeight: 600
-              }}>
-                Commission
-              </div>
-              <div style={{
-                textAlign: "right"
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                paddingBottom: 14,
+                borderBottom: "1px solid #f0f0f0",
+                marginBottom: 14
               }}>
                 <div style={{
-                  fontSize: 18,
-                  color: "#10B981",
-                  fontWeight: 900
+                  fontSize: 14,
+                  color: "#8a8a8a",
+                  fontWeight: 600
                 }}>
-                   {product.commission ?? "0.00"}
+                  Order Number
+                </div>
+                <div style={{
+                  fontSize: 15,
+                  color: "#111111",
+                  fontWeight: 800,
+                  fontFamily: "monospace",
+                  letterSpacing: "0.02em"
+                }}>
+                  {orderNumber}
+                </div>
+              </div>
+
+              {/* Status row with yellow badge */}
+              <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                paddingBottom: 14,
+                borderBottom: "1px solid #f0f0f0",
+                marginBottom: 14
+              }}>
+                <div style={{
+                  fontSize: 14,
+                  color: "#8a8a8a",
+                  fontWeight: 600
+                }}>
+                  Status
+                </div>
+                <div style={{
+                  background: "#FCD34D",
+                  color: "#1F2937",
+                  borderRadius: 12,
+                  padding: "6px 16px",
+                  fontSize: 14,
+                  fontWeight: 800,
+                }}>
+                  PENDING
+                </div>
+              </div>
+
+              {/* Total amount section */}
+              <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                paddingBottom: 12,
+                borderBottom: "1px solid #f0f0f0",
+                marginBottom: 12
+              }}>
+                <div style={{
+                  fontSize: 14,
+                  color: "#8a8a8a",
+                  fontWeight: 600
+                }}>
+                  Total amount
+                </div>
+                <div style={{
+                  textAlign: "right"
+                }}>
+                  <div style={{
+                    fontSize: 20,
+                    color: "#111111",
+                    fontWeight: 900
+                  }}>
+                     {product.price}
+                  </div>
+                </div>
+              </div>
+
+              {/* Commission section */}
+              <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                paddingBottom: 20,
+                marginBottom: 4
+              }}>
+                <div style={{
+                  fontSize: 14,
+                  color: "#8a8a8a",
+                  fontWeight: 600
+                }}>
+                  Commission
+                </div>
+                <div style={{
+                  textAlign: "right"
+                }}>
+                  <div style={{
+                    fontSize: 18,
+                    color: "#10B981",
+                    fontWeight: 900
+                  }}>
+                     {product.commission ?? "0.00"}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Submit button */}
+          {/* Sticky footer with Submit button */}
           <div style={{
-            padding: "0 24px 24px 24px"
+            padding: "12px 24px 20px 24px",
+            borderTop: "1px solid #eee",
+            background: "#fff",
+            flex: "0 0 auto",
+            position: "sticky",
+            bottom: 0,
+            zIndex: 10
           }}>
             <button
               onClick={submitState === "" ? handleSubmitTask : undefined}
