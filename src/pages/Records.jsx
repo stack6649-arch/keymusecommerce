@@ -18,6 +18,11 @@ import recordsIcon from "../assets/images/tabBar/records.png";
     - brand pill, status pills, totals and CTA button (Proceed to Submit)
   - Visual changes are only styling/markup to match screens. Business logic unchanged.
   - Ensure created time and a real order/task number are always shown (falling back to other fields when necessary).
+
+  New behavior:
+  - When pending combo groups contain 2+ products, only the top product in the group will show the normal "PENDING"
+    state and display the submit button (when canSubmit is true). All other products in the same combo group will show
+    "FROZEN" with a reddish pill color. The top product is the first item in the combo group (oldest by createdAt).
 */
 
 const tabs = ["All", "Pending", "Completed"];
@@ -320,18 +325,24 @@ const Records = () => {
   const pendingComboGroups = getPendingComboGroups(filteredRecords);
 
   const frozenMap = {};
+  // New behavior: when a group has >=2 items, we treat the first (oldest) as the top
+  // that can be submitted, and mark all other items in the same combo group as frozen.
   Object.values(pendingComboGroups).forEach((group) => {
     if (group.length >= 2) {
-      const frozenRec = group[group.length - 1]; // freeze last pending in group
-      if (frozenRec && frozenRec.taskCode) {
-        frozenMap[frozenRec.taskCode] = true;
+      // group is sorted by createdAt ascending in getPendingComboGroups
+      // first element is the top (submit candidate); mark all others frozen
+      for (let idx = 1; idx < group.length; idx++) {
+        const frozenRec = group[idx];
+        if (frozenRec && frozenRec.taskCode) {
+          frozenMap[frozenRec.taskCode] = true;
+        }
       }
     }
   });
 
   const lastPendingComboTaskCodes = Object.values(pendingComboGroups).map(getLastPendingComboTaskCode);
 
-  // Build sortedRecords: priority pending-combo items first (non-frozen items above frozen),
+  // Build sortedRecords: priority pending-combo items first (top non-frozen above frozen group mates),
   // then other records in date-desc order.
   const byDateDesc = (x, y) => new Date(y.startedAt || y.createdAt) - new Date(x.startedAt || x.createdAt);
 
@@ -339,6 +350,7 @@ const Records = () => {
 
   const priorityList = [];
   Object.values(pendingComboGroups).forEach((group) => {
+    // Ensure group order: non-frozen (top) first, then frozen group members
     const nonFrozen = group.filter((r) => !frozenMap[r.taskCode]);
     const frozen = group.filter((r) => frozenMap[r.taskCode]);
 
@@ -375,15 +387,19 @@ const Records = () => {
     const isFrozenDisplay = !!frozenMap[record.taskCode];
     const displayStatusText = isFrozenDisplay ? "Frozen" : record.status;
 
+    // Decide badge color and text color
     const badgeColor =
       isFrozenDisplay ? "#ff6b6b" :
-      (record.status === "Pending" && record.comboGroupId && !isFrozenDisplay) ? "#9aa7b6" :
-      record.status === "Pending" ? "#ff9f1c" :
+      (record.status === "Pending" && record.comboGroupId && !isFrozenDisplay) ? "#FCD34D" :
+      record.status === "Pending" ? "#FCD34D" :
       record.status === "Completed" ? START_BLUE : "#8fadc7";
+
+    const badgeTextColor = isFrozenDisplay ? "#ffffff" : (record.status === "Pending" ? "#1f2937" : "#ffffff");
 
     const showSubmitButton = (() => {
       if (submitted[record.taskCode] && record.status === "Completed") return true;
       if (record.comboGroupId) {
+        // only allow submit on pending + not frozen + canSubmit
         return record.status === "Pending" && !isFrozenDisplay && record.canSubmit;
       }
       if (record.status === "Pending" && (!record.isCombo || record.canSubmit)) {
@@ -465,8 +481,18 @@ const Records = () => {
               <div className="meta-label">Status</div>
               <div style={{ minWidth: 90, display: "flex", justifyContent: "flex-end" }}>
                 <div
-                  className={`status-pill ${String(record.status).toLowerCase() === "pending" ? "status-pending" : "status-success"}`}
-                  style={{ textTransform: "uppercase", fontSize: 12 }}
+                  className="status-pill"
+                  style={{
+                    textTransform: "uppercase",
+                    fontSize: 12,
+                    background: badgeColor,
+                    color: badgeTextColor,
+                    padding: "6px 12px",
+                    borderRadius: 12,
+                    fontWeight: 800,
+                    display: "inline-block",
+                    lineHeight: 1,
+                  }}
                 >
                   {String(displayStatusText || "").toUpperCase()}
                 </div>
