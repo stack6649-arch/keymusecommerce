@@ -2,14 +2,11 @@
   "name": "stackswork",
   "version": "1.0.0",
   "private": true,
-  "homepage": "https://stack6649-arch.github.io/keymusecommerce",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "postbuild": "cp public/_redirects dist/_redirects || true && echo '--- dist listing ---' && ls -la dist || true",
-    "start": "vite",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "start": "vite"
   },
   "dependencies": {
     "axios": "^1.9.0",
@@ -23,7 +20,6 @@
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.17",
-    "vite": "^5.4.19",
-    "gh-pages": "^5.0.0"
+    "vite": "^5.4.19"
   }
 }
