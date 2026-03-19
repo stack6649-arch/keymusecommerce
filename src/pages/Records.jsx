@@ -11,20 +11,13 @@ import recordsIcon from "../assets/images/tabBar/records.png";
 /*
   Records.jsx - optimized for instant UX
 
-  Key changes:
-  - Keep original logic, polling and submission flows unchanged.
-  - Adapted markup and class names for the new Records.css to match the screenshots exactly:
-    - card layout with left image, center title/quantity and right metadata + CTA
-    - brand pill, status pills, totals and CTA button (Proceed to Submit)
-  - Visual changes are only styling/markup to match screens. Business logic unchanged.
-  - Ensure created time and a real order/task number are always shown (falling back to other fields when necessary).
-
-  New behavior requested & implemented:
-  - When there is a combo group (records sharing comboGroupId) and that combo contains at least one Pending item,
-    the group is shown under the Pending tab. The top product in the combo (oldest by createdAt) is treated as the
-    submit candidate: it always appears above its combo-mates, shows the yellow "PENDING" pill and will render the
-    submit button (when canSubmit is true). All other products in that combo are shown immediately below the top item
-    and display the red "FROZEN" pill (no submit button). Other view behavior remains unchanged.
+  Notes:
+  - I made only small, non-invasive debug additions to help show why combo items may not be marked frozen.
+  - Additions:
+    * Console debug logs for comboGroupsAll, pendingGroupIds, topMap and frozenMap.
+    * Exposes window.__recordsDebug() to print the same info on demand.
+    * Adds data attributes (data-frozen, data-top) to each record card so you can inspect in DevTools.
+  - All existing behavior/logic preserved (grouping, ordering, submit behavior).
 */
 
 const tabs = ["All", "Pending", "Completed"];
@@ -352,6 +345,38 @@ const Records = () => {
     }
   });
 
+  // Debug: expose grouping maps and log them so you can inspect why a particular record was/wasn't frozen.
+  useEffect(() => {
+    try {
+      // Convert maps to plain objects for easier logging
+      const comboPreview = {};
+      Object.entries(comboGroupsAll).forEach(([k, v]) => {
+        comboPreview[k] = v.map((r) => ({ taskCode: r.taskCode, createdAt: r.createdAt, status: r.status }));
+      });
+
+      const frozenKeys = Object.keys(frozenMap);
+      const topEntries = Object.entries(topMap);
+
+      console.debug("Records Debug: comboGroupsAll preview:", comboPreview);
+      console.debug("Records Debug: pendingGroupIds:", Array.from(pendingGroupIds));
+      console.debug("Records Debug: topMap:", topEntries);
+      console.debug("Records Debug: frozenMap keys:", frozenKeys);
+
+      // Provide a helper on window you can call from the console if needed
+      window.__recordsDebug = function () {
+        return {
+          comboGroupsAll: comboPreview,
+          pendingGroupIds: Array.from(pendingGroupIds),
+          topMap,
+          frozenMapKeys: frozenKeys,
+        };
+      };
+    } catch (e) {
+      // ignore debug errors
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayRecords, activeTab]);
+
   // Build sortedRecords: ensure that for each pending combo group, the top (submit candidate) appears first,
   // followed by its frozen siblings. Then append remaining records sorted by date desc.
   const byDateDesc = (x, y) => new Date(y.startedAt || y.createdAt) - new Date(x.startedAt || x.createdAt);
@@ -469,6 +494,8 @@ const Records = () => {
       <div
         key={getRecordKey(record, i)}
         className="record-card"
+        data-frozen={isFrozenDisplay ? "true" : "false"}
+        data-top={isTopInPendingGroup ? "true" : "false"}
       >
         <div className="record-image-wrap">
           <img
@@ -601,4 +628,4 @@ const Records = () => {
   );
 };
 
-export default Records;
+export default Records; s
