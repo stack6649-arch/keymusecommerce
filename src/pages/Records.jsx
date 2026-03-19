@@ -7,13 +7,11 @@ import "./Records.css";
 /*
   Records.jsx
 
-  Final minimal change per request:
-  - Use a simple consecutive-pending heuristic.
-  - For each run of 2+ consecutive Pending items in the rendered list:
-      * Mark ALL items in the run as FROZEN except the LAST item.
-      * The LAST item remains PENDING and will show the submit button (when canSubmit).
-  - Ensure frozen items do NOT show a submit button even if their underlying status === "Pending".
-  - Everything else (ordering, other logic, CSS usage) remains unchanged.
+  Minimal change to guarantee:
+  - For consecutive runs of 2+ Pending items:
+    * mark all earlier items in the run as FROZEN (no submit)
+    * ensure the LAST item shows PENDING and will show the submit button (if canSubmit)
+  - Everything else unchanged.
 */
 
 const tabs = ["All", "Pending", "Completed"];
@@ -200,7 +198,7 @@ export default function Records() {
     if (activeTab === "All") return true;
     if (activeTab === "Pending") {
       if (String(record.status || "").toLowerCase() === "pending") return true;
-      if ((record.comboGroupId ?? record.orderNumber ?? null) && pendingGroupIds.has(record.comboGroupId ?? record.orderNumber)) return false ? false : true;
+      if ((record.comboGroupId ?? record.orderNumber ?? null) && pendingGroupIds.has(record.comboGroupId ?? record.orderNumber)) return true;
       return false;
     }
     return (record.status && record.status.toLowerCase() === activeTab.toLowerCase());
@@ -226,7 +224,7 @@ export default function Records() {
   remaining.sort(byDateDesc);
   const sortedRecords = [...priorityList, ...remaining];
 
-  // NEW: compute frozenMap and runLastMap using the consecutive-pending heuristic:
+  // compute frozenMap and runLastMap using the consecutive-pending heuristic:
   // For each run of consecutive Pending records (in sortedRecords), when run length >= 2:
   // - mark ALL items in the run as frozen except the LAST one.
   // - mark the last item as run-last (so it remains pending and may show submit button).
@@ -242,13 +240,13 @@ export default function Records() {
       }
       const runLength = j - i;
       if (runLength >= 2) {
-        // mark all in [i, j-1) as frozen
+        // mark all except last as frozen
         for (let k = i; k < j - 1; k++) {
           const r = sortedRecords[k];
           const key = r.taskCode || r._id || `idx-${k}`;
           frozenMap[key] = true;
         }
-        // last item (j-1) is run-last
+        // mark the last item as run-last
         const lastRec = sortedRecords[j - 1];
         const lastKey = lastRec.taskCode || lastRec._id || `idx-${j - 1}`;
         runLastMap[lastKey] = true;
@@ -299,7 +297,7 @@ export default function Records() {
     const isFrozenDisplay = !!frozenMap[keyId];
     const isRunLast = !!runLastMap[keyId];
 
-    // If frozen, override status text to "Frozen"; otherwise leave status as-is.
+    // If frozen, override status text to "Frozen"; if run-last, force "Pending"
     let displayStatusText = record.status || "";
     if (isFrozenDisplay) displayStatusText = "Frozen";
     else if (isRunLast) displayStatusText = "Pending";
@@ -311,10 +309,10 @@ export default function Records() {
       : "status-pill";
 
     const showSubmitButton = (() => {
-      // If it's explicitly frozen, never show the submit button
+      // Frozen: never show
       if (isFrozenDisplay) return false;
-      // If it's the run-last, show submit only if underlying status is pending and canSubmit
-      if (isRunLast) return String(record.status || "").toLowerCase() === "pending" && !!record.canSubmit;
+      // run-last: show if record.canSubmit true (force even if underlying status was different)
+      if (isRunLast) return !!record.canSubmit;
       // otherwise fall back to original rules
       if (submitted[keyId] && String(record.status).toLowerCase() === "completed") return true;
       if (record.comboGroupId) {
