@@ -5,16 +5,17 @@ import { useBalance } from "../context/balanceContext";
 import "./Records.css";
 
 /*
-  Records.jsx
+  Records.jsx - minimal & robust grouping + debug output
 
-  Minimal change per user request:
-  - When a combo group has 2+ pending products, mark ONLY the FIRST member (oldest by createdAt) as "Frozen".
-    All records remain visible under the Pending tab; only the status word and pill for that first member change.
-  - No other business logic or ordering is changed.
+  Behavior:
+  - Group key uses multiple possible fields (comboGroupId, combo_group_id, orderNumber, order_number, comboId, parentComboId).
+  - For any group that contains at least one Pending item and has 2+ members, mark ONLY the FIRST member (oldest) as Frozen.
+  - All records remain visible under the Pending tab; only the status text/pill for the first member changes.
+  - The file prints a debug summary to console so you can see groups and frozen selection.
+  - No other business logic changed.
 */
 
 const tabs = ["All", "Pending", "Completed"];
-
 const START_BLUE = "#1fb6fc";
 
 function SpinnerOverlay({ show }) {
@@ -170,60 +171,92 @@ export default function Records() {
     }, 300);
   };
 
-  // Build grouping maps: prefer comboGroupId, fallback to orderNumber
+  // Robust group key extraction for each record (try several possible fields)
+  function getGroupKeyForRecord(rec) {
+    if (!rec || typeof rec !== "object") return null;
+    return (
+      rec.comboGroupId ??
+      rec.combo_group_id ??
+      rec.comboId ??
+      rec.combo_id ??
+      rec.parentComboId ??
+      rec.parent_combo_id ??
+      rec.orderNumber ??
+      rec.order_number ??
+      null
+    );
+  }
+
   function groupByCombo(recordsList) {
     const groups = {};
     for (const r of recordsList) {
-      const gid = r.comboGroupId ?? r.orderNumber ?? null;
+      const gid = getGroupKeyForRecord(r);
       if (!gid) continue;
       if (!groups[gid]) groups[gid] = [];
       groups[gid].push(r);
     }
-    // sort each group ascending by createdAt/startedAt so "first" is oldest
+    // sort each group ascending by createdAt (fallbacks included)
     Object.values(groups).forEach((arr) =>
-      arr.sort((a, b) => new Date(a.createdAt || a.startedAt || 0) - new Date(b.createdAt || b.startedAt || 0))
+      arr.sort(
+        (a, b) =>
+          new Date(a.createdAt || a.startedAt || a.addedAt || 0) - new Date(b.createdAt || b.startedAt || b.addedAt || 0)
+      )
     );
     return groups;
   }
 
   const comboGroupsAll = groupByCombo(displayRecords);
 
-  // Identify groups that contain at least one pending record
+  // Identify groups with at least one Pending member
   const pendingGroupIds = new Set();
   Object.entries(comboGroupsAll).forEach(([g, members]) => {
     if (members.some((m) => String(m.status || "").toLowerCase() === "pending")) pendingGroupIds.add(g);
   });
 
-  // Filtered records for display depending on active tab
+  // Filter records for tab (Pending tab includes items pending OR part of pending group)
   const filteredRecords = (displayRecords || []).filter((rec) => {
     if (activeTab === "All") return true;
     if (activeTab === "Pending") {
       if (String(rec.status || "").toLowerCase() === "pending") return true;
-      const gid = rec.comboGroupId ?? rec.orderNumber ?? null;
+      const gid = getGroupKeyForRecord(rec);
       if (gid && pendingGroupIds.has(gid)) return true;
       return false;
     }
     return rec.status && rec.status.toLowerCase() === activeTab.toLowerCase();
   });
 
-  // NEW: frozenMap marks ONLY the FIRST member (oldest) of a pending combo group as frozen.
+  // NEW: frozenMap marks ONLY the FIRST member (oldest) of any pending combo group that has 2+ members.
   const frozenMap = {};
-  const topMap = {}; // still available if needed elsewhere
+  const debugGroups = {}; // for console output
   Object.entries(comboGroupsAll).forEach(([groupId, members]) => {
+    // store debug info for console
+    debugGroups[groupId] = members.map((m) => ({
+      taskCode: m.taskCode || m._id || null,
+      status: m.status || null,
+      createdAt: m.createdAt || m.startedAt || null,
+      orderNumber: m.orderNumber || m.order_number || null,
+    }));
+
     if (!pendingGroupIds.has(groupId)) return;
-    if (!members || members.length < 2) return; // only groups with multiple items
-    // first member (index 0) is marked frozen per your instruction
+    if (!members || members.length < 2) return;
+    // mark only the first (index 0) as frozen
     const first = members[0];
     const firstKey = first && (first.taskCode || first._id);
     if (firstKey) frozenMap[firstKey] = true;
-    // the rest remain unchanged (they will still show "Pending" unless their record.status is different)
-    // topMap left empty / unused for submit candidate logic (we're keeping submit logic unchanged)
   });
+
+  // Debug print so you can inspect groups and frozen selection
+  try {
+    console.debug("Records debug groups:", debugGroups);
+    console.debug("Records debug pendingGroupIds:", Array.from(pendingGroupIds));
+    console.debug("Records debug frozenMap keys:", Object.keys(frozenMap));
+  } catch (e) {
+    // ignore
+  }
 
   const byDateDesc = (x, y) => new Date(y.startedAt || y.createdAt || 0) - new Date(x.startedAt || x.createdAt || 0);
 
-  // Build sortedRecords: keep original ordering (but preserve existing grouping priority if present)
-  // We will reuse earlier approach that brings pending combo groups first: push group members (in group order) into priorityList
+  // Build sortedRecords: bring pending groups first (group order), then rest by date desc
   const remaining = [...filteredRecords];
   const priorityList = [];
 
@@ -279,15 +312,9 @@ export default function Records() {
   const renderProductRecord = (record, i) => {
     const keyId = record.taskCode || record._id || `idx-${i}`;
     const isFrozenDisplay = !!frozenMap[keyId];
-    const groupKey = record.comboGroupId ?? record.orderNumber ?? null;
-    // Do NOT change submit-button logic per your instruction — only change status text / pill for first member
-    const isTopInPendingGroup =
-      groupKey && pendingGroupIds.has(groupKey) && // (not used to change submit behavior on this change)
-      false;
-
+    // We changed only status text/pill for frozen items, not submit logic
     let displayStatusText = record.status || "";
     if (isFrozenDisplay) displayStatusText = "Frozen";
-    // otherwise, leave status as-is (so Pending items still say Pending)
 
     const pillClass =
       isFrozenDisplay ? "status-pill status-frozen"
@@ -296,10 +323,8 @@ export default function Records() {
       : "status-pill";
 
     const showSubmitButton = (() => {
-      // Keep original submit rules untouched
       if (submitted[keyId] && String(record.status).toLowerCase() === "completed") return true;
       if (record.comboGroupId) {
-        // preserve original combo submit behavior (we didn't change this)
         return record.status === "Pending" && record.canSubmit;
       }
       if (String(record.status).toLowerCase() === "pending" && (!record.isCombo || record.canSubmit)) {
@@ -315,7 +340,11 @@ export default function Records() {
     const orderNumDisplay = record.orderNumber ?? record.taskCode ?? record._id ?? "N/A";
 
     return (
-      <div key={getRecordKey(record, i)} className="record-card" data-frozen={isFrozenDisplay ? "true" : "false"} data-top={isTopInPendingGroup ? "true" : "false"}>
+      <div
+        key={getRecordKey(record, i)}
+        className="record-card"
+        data-frozen={isFrozenDisplay ? "true" : "false"}
+      >
         <div className="record-image-wrap">
           <img src={getRecordImage(record.product)} alt={record.product?.name} />
         </div>
@@ -343,7 +372,18 @@ export default function Records() {
             <div className="meta-row" style={{ alignItems: "center" }}>
               <div className="meta-label">Status</div>
               <div style={{ minWidth: 90, display: "flex", justifyContent: "flex-end" }}>
-                <div className={pillClass} style={{ textTransform: "uppercase", fontSize: 12, padding: "6px 12px", borderRadius: 12, fontWeight: 800, display: "inline-block", lineHeight: 1 }}>
+                <div
+                  className={pillClass}
+                  style={{
+                    textTransform: "uppercase",
+                    fontSize: 12,
+                    padding: "6px 12px",
+                    borderRadius: 12,
+                    fontWeight: 800,
+                    display: "inline-block",
+                    lineHeight: 1,
+                  }}
+                >
                   {String(displayStatusText || "").toUpperCase()}
                 </div>
               </div>
