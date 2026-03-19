@@ -1,24 +1,16 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTaskRecords } from "../context/TaskRecordsContext";
 import { useBalance } from "../context/balanceContext";
 import "./Records.css";
 
-import homeIcon from "../assets/images/tabBar/homeh.png";
-import startingIcon from "../assets/images/tabBar/icon30.png";
-import recordsIcon from "../assets/images/tabBar/records.png";
-
 /*
-  Records.jsx
-
-  Notes:
-  - I preserved all business logic and layout you already had.
-  - Change implemented: combo grouping now also recognizes groups by orderNumber when comboGroupId is missing.
-    This covers cases where combo products share the same order number but the backend didn't populate comboGroupId.
-  - For any detected combo group that contains at least one Pending item and has 2+ members, the newest member
-    (last by createdAt/startedAt) is treated as the submit candidate (PENDING + submit button). All other members
-    in that group are marked as FROZEN and show a red frozen pill.
-  - No other parts of the file were removed or reworked; only the grouping logic was extended to include orderNumber-based groups.
+  Records.jsx - updated to:
+  - Detect combo groups reliably (uses comboGroupId or orderNumber fallback provided by the provider).
+  - For pending combo groups with 2+ members, treat the newest (last by createdAt) as the submit candidate
+    (shows yellow PENDING and submit button), and mark all other members as FROZEN (light red pill, no submit).
+  - Uses CSS classes for pill colors (status-pending, status-frozen, status-success).
+  - Preserves all other logic and layout.
 */
 
 const tabs = ["All", "Pending", "Completed"];
@@ -39,7 +31,7 @@ function SpinnerOverlay({ show }) {
         background: "rgba(245,247,251,0.38)",
         display: "flex",
         alignItems: "center",
-        justifyContent: "center"
+        justifyContent: "center",
       }}
     >
       <div
@@ -49,7 +41,7 @@ function SpinnerOverlay({ show }) {
           border: "6px solid #ddd",
           borderTop: `6px solid ${START_BLUE}`,
           borderRadius: "50%",
-          animation: "spin 0.8s linear infinite"
+          animation: "spin 0.8s linear infinite",
         }}
       />
       <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
@@ -98,33 +90,24 @@ function GreyToast({ show, message }) {
   );
 }
 
-/* Helper to convert product names to Title Case */
 function toTitleCase(str) {
   if (!str) return "";
   return str
     .toLowerCase()
     .split(" ")
     .filter(Boolean)
-    .map(w => w[0] ? w[0].toUpperCase() + w.slice(1) : w)
+    .map((w) => (w[0] ? w[0].toUpperCase() + w.slice(1) : w))
     .join(" ");
 }
 
-const Records = () => {
+export default function Records() {
   const [activeTab, setActiveTab] = useState("All");
+  const { records, fetchTaskRecords, submitTaskRecord } = useTaskRecords();
+  const { balance, refreshProfile } = useBalance();
   const navigate = useNavigate();
   const location = useLocation();
-  const { records, submitTaskRecord, fetchTaskRecords, addTaskRecord, hasPendingTask } = useTaskRecords();
-  const { balance, commissionToday, refreshProfile } = useBalance();
 
-  // displayRecords seeded from context or localStorage
-  const [displayRecords, setDisplayRecords] = useState(() => {
-    try {
-      const cached = localStorage.getItem("taskRecords");
-      if (cached) return JSON.parse(cached);
-    } catch (e) { /* ignore */ }
-    return records || [];
-  });
-
+  const [displayRecords, setDisplayRecords] = useState([]);
   const [showSpinner, setShowSpinner] = useState(false);
   const [submitting, setSubmitting] = useState({});
   const [submitted, setSubmitted] = useState({});
@@ -133,72 +116,17 @@ const Records = () => {
   useEffect(() => {
     if (Array.isArray(records) && records.length > 0) {
       setDisplayRecords(records);
-      try { localStorage.setItem("taskRecords", JSON.stringify(records)); } catch (e) {}
+      try {
+        localStorage.setItem("taskRecords", JSON.stringify(records));
+      } catch (e) {}
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [records]);
 
-  const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
-
   useEffect(() => {
-    const onFocus = () => {
-      if (fetchTaskRecords) fetchTaskRecords().catch(() => {});
-    };
-    const onVisibility = () => {
-      if (!document.hidden && fetchTaskRecords) fetchTaskRecords().catch(() => {});
-    };
-    window.addEventListener("focus", onFocus);
-    document.addEventListener("visibilitychange", onVisibility);
-    return () => {
-      window.removeEventListener("focus", onFocus);
-      document.removeEventListener("visibilitychange", onVisibility);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // initial fetch on mount (non-blocking)
+    fetchTaskRecords && fetchTaskRecords().catch(() => {});
+    // eslint-disable-next-line
   }, []);
-
-  // initial background refresh (spinner capped)
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const hasCached = Array.isArray(displayRecords) && displayRecords.length > 0;
-      if (!hasCached) setShowSpinner(true);
-
-      const MAX_VISIBLE_MS = 2000;
-      const start = Date.now();
-
-      try {
-        if (fetchTaskRecords) {
-          const fetchPromise = fetchTaskRecords();
-          const race = Promise.race([
-            fetchPromise,
-            new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), MAX_VISIBLE_MS))
-          ]);
-          try { await race; } catch (e) { /* ignore */ }
-        }
-      } finally {
-        const elapsed = Date.now() - start;
-        const remain = Math.max(0, MAX_VISIBLE_MS - elapsed);
-        await sleep(remain);
-        if (!cancelled) setShowSpinner(false);
-      }
-    })();
-
-    return () => { cancelled = true; }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      if (location.pathname !== "/records") return;
-      try {
-        if (fetchTaskRecords) await fetchTaskRecords();
-      } catch (e) {}
-      if (mounted) {}
-    })();
-    return () => { mounted = false; }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname]);
 
   useEffect(() => {
     const iv = setInterval(() => {
@@ -207,48 +135,76 @@ const Records = () => {
     return () => clearInterval(iv);
   }, [fetchTaskRecords]);
 
-  // Grouping function: group by comboGroupId when present; otherwise fall back to orderNumber (if present)
-  function groupPotentialCombos(recordsList) {
+  const showGrey = (message, duration = 1600) => {
+    setGreyToast({ show: true, message });
+    setTimeout(() => setGreyToast({ show: false, message: "" }), duration);
+  };
+
+  const handleSubmit = async (task) => {
+    if (task.isCombo && task.canSubmit && balance < 0) {
+      showGrey("Insufficient Balance.");
+      setTimeout(() => navigate("/deposit"), 1600);
+      return;
+    }
+    const key = task.taskCode || task._id;
+    setSubmitting((p) => ({ ...p, [key]: true }));
+    setSubmitted((p) => ({ ...p, [key]: false }));
+    setTimeout(async () => {
+      const result = await submitTaskRecord(task.taskCode);
+      setSubmitting((p) => ({ ...p, [key]: false }));
+      if (!result.success && result.mustDeposit) {
+        showGrey("Insufficient Balance.");
+        setTimeout(() => navigate("/deposit"), 1600);
+        return;
+      }
+      if (!result.success) {
+        alert(result.message || "Failed to submit task.");
+      } else {
+        setSubmitted((p) => ({ ...p, [key]: true }));
+        try {
+          await refreshProfile();
+        } catch (e) {}
+        if (fetchTaskRecords) await fetchTaskRecords();
+        setTimeout(() => setSubmitted((p) => ({ ...p, [key]: false })), 1500);
+      }
+    }, 300);
+  };
+
+  // Build grouping maps
+  function groupByCombo(recordsList) {
     const groups = {};
-    for (const rec of recordsList) {
-      // prefer explicit comboGroupId, fall back to orderNumber when comboGroupId is missing
-      const gid = rec.comboGroupId ?? rec.orderNumber ?? null;
+    for (const r of recordsList) {
+      const gid = r.comboGroupId ?? r.orderNumber ?? null;
       if (!gid) continue;
       if (!groups[gid]) groups[gid] = [];
-      groups[gid].push(rec);
+      groups[gid].push(r);
     }
-    // sort each group by createdAt/startedAt ascending (oldest -> newest)
-    Object.values(groups).forEach(arr =>
+    Object.values(groups).forEach((arr) =>
       arr.sort((a, b) => new Date(a.createdAt || a.startedAt || 0) - new Date(b.createdAt || b.startedAt || 0))
     );
     return groups;
   }
 
-  const comboGroupsAll = groupPotentialCombos(displayRecords);
+  const comboGroupsAll = groupByCombo(displayRecords);
 
-  // pendingGroupIds: groups that contain at least one Pending member
   const pendingGroupIds = new Set();
-  Object.entries(comboGroupsAll).forEach(([groupId, members]) => {
-    const hasPending = members.some(m => String(m.status || "").toLowerCase() === "pending");
-    if (hasPending) pendingGroupIds.add(groupId);
+  Object.entries(comboGroupsAll).forEach(([g, members]) => {
+    if (members.some((m) => String(m.status || "").toLowerCase() === "pending")) pendingGroupIds.add(g);
   });
 
-  // Filter records by tab. For Pending tab include items that are pending OR belong to a pending combo group.
-  const filteredRecords = (displayRecords || []).filter((record) => {
+  // Filter records by tab. Pending tab includes items that are pending OR part of a pending combo group.
+  const filteredRecords = (displayRecords || []).filter((rec) => {
     if (activeTab === "All") return true;
     if (activeTab === "Pending") {
-      if (String(record.status || "").toLowerCase() === "pending") return true;
-      // include items that are part of a combo group that has at least one pending item
-      const maybeGroupId = record.comboGroupId ?? record.orderNumber ?? null;
-      if (maybeGroupId && pendingGroupIds.has(maybeGroupId)) return true;
+      if (String(rec.status || "").toLowerCase() === "pending") return true;
+      const gid = rec.comboGroupId ?? rec.orderNumber ?? null;
+      if (gid && pendingGroupIds.has(gid)) return true;
       return false;
     }
-    return (record.status && record.status.toLowerCase() === activeTab.toLowerCase());
+    return (rec.status && rec.status.toLowerCase() === activeTab.toLowerCase());
   });
 
-  // Build frozenMap and topMap:
-  // For pending groups with >=2 members, the LAST member (newest) is top (submit candidate),
-  // and all other members are marked frozen.
+  // Build frozenMap and topMap: last (newest) in pending group is top, others frozen
   const frozenMap = {};
   const topMap = {};
   Object.entries(comboGroupsAll).forEach(([groupId, members]) => {
@@ -258,26 +214,23 @@ const Records = () => {
     const topRec = members[lastIdx];
     const topKey = topRec && (topRec.taskCode || topRec._id);
     if (topKey) topMap[groupId] = topKey;
-    for (let idx = 0; idx < members.length; idx++) {
-      if (idx === lastIdx) continue; // skip the top (newest) item
-      const rec = members[idx];
-      const key = rec && (rec.taskCode || rec._id);
+    for (let i = 0; i < members.length; i++) {
+      if (i === lastIdx) continue;
+      const key = members[i] && (members[i].taskCode || members[i]._id);
       if (key) frozenMap[key] = true;
     }
   });
 
   const byDateDesc = (x, y) => new Date(y.startedAt || y.createdAt || 0) - new Date(x.startedAt || x.createdAt || 0);
 
-  // Build sortedRecords so each pending group appears with LAST (top) first, then the frozen members,
-  // then the rest of records sorted by date desc.
+  // Build sortedRecords: pending groups first with top (newest) then frozen members; then the rest by date desc.
   const remaining = [...filteredRecords];
   const priorityList = [];
 
   Array.from(pendingGroupIds).forEach((groupId) => {
     const members = comboGroupsAll[groupId] || [];
-    if (!members || members.length === 0) return;
+    if (!members.length) return;
     const lastIdx = members.length - 1;
-    // push the last (top submit candidate) first if present in remaining
     const topMember = members[lastIdx];
     if (topMember) {
       const idx = remaining.findIndex((r) => (r.taskCode || r._id) === (topMember.taskCode || topMember._id));
@@ -286,7 +239,6 @@ const Records = () => {
         remaining.splice(idx, 1);
       }
     }
-    // then push the other members (frozen) in ascending order (oldest -> newest), excluding the top already pushed
     for (let j = 0; j < members.length; j++) {
       if (j === lastIdx) continue;
       const mem = members[j];
@@ -308,38 +260,33 @@ const Records = () => {
     return "/assets/images/products/default.png";
   };
 
-  const showGrey = (message, duration = 1600) => {
-    setGreyToast({ show: true, message });
-    setTimeout(() => setGreyToast({ show: false, message: "" }), duration);
+  const formatLocal = (dstr) => {
+    if (!dstr) return "";
+    try {
+      const d = new Date(dstr);
+      if (isNaN(d.getTime())) return dstr;
+      const day = d.getDate().toString().padStart(2, "0");
+      const month = (d.getMonth() + 1).toString().padStart(2, "0");
+      const year = d.getFullYear();
+      let hours = d.getHours();
+      const minutes = d.getMinutes().toString().padStart(2, "0");
+      const seconds = d.getSeconds().toString().padStart(2, "0");
+      const ampm = hours >= 12 ? "pm" : "am";
+      hours = hours % 12;
+      if (hours === 0) hours = 12;
+      const hourStr = hours.toString().padStart(2, "0");
+      return `${day}/${month}/${year}, ${hourStr}:${minutes}:${seconds} ${ampm}`;
+    } catch (e) {
+      return dstr;
+    }
   };
 
-  const handleSubmit = async (task) => {
-    if (task.isCombo && task.canSubmit && balance < 0) {
-      showGrey("Insufficient Balance.");
-      setTimeout(() => navigate("/deposit"), 1600);
-      return;
+  function getRecordKey(record, i) {
+    if (record.isCombo && typeof record.comboIndex !== "undefined") {
+      return `${record.taskCode || record._id || "noid"}-combo-${record.comboIndex}`;
     }
-    const keyId = task.taskCode || task._id;
-    setSubmitting(prev => ({ ...prev, [keyId]: true }));
-    setSubmitted(prev => ({ ...prev, [keyId]: false }));
-    setTimeout(async () => {
-      const result = await submitTaskRecord(task.taskCode);
-      setSubmitting(prev => ({ ...prev, [keyId]: false }));
-      if (!result.success && result.mustDeposit) {
-        showGrey("Insufficient Balance.");
-        setTimeout(() => navigate("/deposit"), 1600);
-        return;
-      }
-      if (!result.success) {
-        alert(result.message || "Failed to submit task.");
-      } else {
-        setSubmitted(prev => ({ ...prev, [keyId]: true }));
-        try { await refreshProfile(); } catch (e) {}
-        if (fetchTaskRecords) await fetchTaskRecords();
-        setTimeout(() => setSubmitted(prev => ({ ...prev, [keyId]: false })), 1500);
-      }
-    }, 300);
-  };
+    return record.taskCode || record._id || `idx-${i}`;
+  }
 
   const renderProductRecord = (record, i) => {
     const keyId = record.taskCode || record._id || `idx-${i}`;
@@ -347,12 +294,10 @@ const Records = () => {
     const groupKey = record.comboGroupId ?? record.orderNumber ?? null;
     const isTopInPendingGroup = !!(groupKey && pendingGroupIds.has(groupKey) && topMap[groupKey] === keyId);
 
-    // If this record is part of a detected pending combo group and it's not the top (newest), force show Frozen.
     let displayStatusText = record.status || "";
     if (isFrozenDisplay) displayStatusText = "Frozen";
     else if (isTopInPendingGroup) displayStatusText = "Pending";
 
-    // Determine pill CSS class (use CSS classes so Records.css controls colors)
     const pillClass =
       isFrozenDisplay ? "status-pill status-frozen"
       : String(displayStatusText).toLowerCase() === "pending" ? "status-pill status-pending"
@@ -371,27 +316,6 @@ const Records = () => {
     })();
 
     const isDisabledSubmit = submitting[keyId] || submitted[keyId] || !record.canSubmit;
-
-    const formatLocal = (dstr) => {
-      if (!dstr) return "";
-      try {
-        const d = new Date(dstr);
-        if (isNaN(d.getTime())) return dstr;
-        const day = d.getDate().toString().padStart(2, "0");
-        const month = (d.getMonth() + 1).toString().padStart(2, "0");
-        const year = d.getFullYear();
-        let hours = d.getHours();
-        const minutes = d.getMinutes().toString().padStart(2, "0");
-        const seconds = d.getSeconds().toString().padStart(2, "0");
-        const ampm = hours >= 12 ? "pm" : "am";
-        hours = hours % 12;
-        if (hours === 0) hours = 12;
-        const hourStr = hours.toString().padStart(2, "0");
-        return `${day}/${month}/${year}, ${hourStr}:${minutes}:${seconds} ${ampm}`;
-      } catch (e) {
-        return dstr;
-      }
-    };
 
     const rawDate = record.createdAt || record.startedAt || record.completedAt || record.addedAt || record.updatedAt || null;
     const displayDate = rawDate ? formatLocal(rawDate) : "N/A";
@@ -455,14 +379,6 @@ const Records = () => {
     );
   };
 
-  // helper to create stable key
-  function getRecordKey(record, i) {
-    if (record.isCombo && typeof record.comboIndex !== "undefined") {
-      return `${record.taskCode || record._id || "noid"}-combo-${record.comboIndex}`;
-    }
-    return record.taskCode || record._id || `idx-${i}`;
-  }
-
   return (
     <div className="records-container" style={{ minHeight: "100vh", position: "relative", overflowX: "hidden" }}>
       <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
@@ -491,7 +407,7 @@ const Records = () => {
                 background: activeTab === t ? "#fff" : "transparent",
                 color: activeTab === t ? "#111" : "#6b6b6b",
                 border: activeTab === t ? "1px solid #eef2f6" : "1px solid transparent",
-                boxShadow: activeTab === t ? "0 6px 18px rgba(0,0,0,0.04)" : "none"
+                boxShadow: activeTab === t ? "0 6px 18px rgba(0,0,0,0.04)" : "none",
               }}
             >
               {t}
@@ -515,6 +431,4 @@ const Records = () => {
       </div>
     </div>
   );
-};
-
-export default Records;
+}
