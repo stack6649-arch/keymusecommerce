@@ -17,9 +17,9 @@ export const TaskRecordsProvider = ({ children }) => {
     record.createdAt = record.createdAt || record.created_at || record.startedAt || record.started_at || record.addedAt || record.added_at || null;
     record.startedAt = record.startedAt || record.started_at || record.createdAt || null;
     // ensure product object exists
-    record.product = record.product || record.item || record.product || {};
+    record.product = record.product || record.item || {};
     // ensure status is a string
-    record.status = typeof record.status === "string" ? record.status : (record.state || "") ;
+    record.status = typeof record.status === "string" ? record.status : (record.state || "");
     // preserve isCombo if backend provides, else we'll compute later
     record.isCombo = !!record.isCombo;
     return record;
@@ -53,10 +53,10 @@ export const TaskRecordsProvider = ({ children }) => {
       // Normalize incoming records to ensure UI-friendly shape
       const normalized = incoming.map(normalizeRecord);
 
-      // Compute combo membership: group by comboGroupId (if present)
+      // Compute combo membership: group by comboGroupId (if present) OR orderNumber fallback
       const groups = {};
       normalized.forEach((rec) => {
-        const gid = rec.comboGroupId;
+        const gid = rec.comboGroupId ?? null;
         if (!gid) return;
         if (!groups[gid]) groups[gid] = [];
         groups[gid].push(rec);
@@ -71,8 +71,7 @@ export const TaskRecordsProvider = ({ children }) => {
         }
       });
 
-      // If backend didn't provide createdAt for some records, hide them at the end — but keep consistent ordering.
-      // Sort each group by createdAt ascending so UI logic that picks first/last works.
+      // Sort each group's members by createdAt ascending so UI logic can pick oldest/newest
       Object.values(groups).forEach((arr) => {
         arr.sort((a, b) => {
           const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
@@ -81,7 +80,6 @@ export const TaskRecordsProvider = ({ children }) => {
         });
       });
 
-      // finalRecords: use normalized array (preserve server order where useful)
       const finalRecords = normalized;
 
       setRecords(finalRecords);
@@ -124,6 +122,7 @@ export const TaskRecordsProvider = ({ children }) => {
           return {
             isCombo: true,
             ...data,
+            refreshed,
           };
         }
         return { task: data.task, refreshed };
@@ -170,7 +169,7 @@ export const TaskRecordsProvider = ({ children }) => {
     records.find((t) => String(t.status).toLowerCase() === "pending" && !t.isCombo) || null;
 
   const getPendingComboTasks = () => {
-    // Find first combo that is pending (this logic mirrors your original helper)
+    // Find first combo that is pending (this logic mirrors the original helper)
     const combo = records.find((t) => String(t.status).toLowerCase() === "pending" && t.isCombo);
     if (!combo || !combo.comboGroupId) return [];
     return records.filter((t) => String(t.status).toLowerCase() === "pending" && t.comboGroupId === combo.comboGroupId);
