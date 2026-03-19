@@ -150,8 +150,7 @@ export default function Records() {
     setSubmitting((p) => ({ ...p, [key]: true }));
     setSubmitted((p) => ({ ...p, [key]: false }));
     setTimeout(async () => {
-      // Pass comboIndex for combo products (server expects comboIndex for per-product submit)
-      const result = await submitTaskRecord(task.taskCode, task.comboIndex);
+      const result = await submitTaskRecord(task.taskCode);
       setSubmitting((p) => ({ ...p, [key]: false }));
       if (!result.success && result.mustDeposit) {
         showGrey("Insufficient Balance.");
@@ -285,11 +284,8 @@ export default function Records() {
 
   const renderProductRecord = (record, i) => {
     const keyId = record.taskCode || record._id || `idx-${i}`;
-    // Prefer server-provided frozen flag, fallback to computed frozenMap
-    const isFrozenDisplay = typeof record.product?.frozen === "boolean" ? record.product.frozen : !!frozenMap[keyId];
-    const isLastPending = typeof record.product?.frozen === "boolean"
-      ? (!record.product.frozen && String(record.status || '').toLowerCase() === 'pending')
-      : !!lastPendingMap[keyId];
+    const isFrozenDisplay = !!frozenMap[keyId];
+    const isLastPending = !!lastPendingMap[keyId];
 
     // Determine the displayed status:
     // - Frozen if isFrozenDisplay
