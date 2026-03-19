@@ -19,10 +19,12 @@ import recordsIcon from "../assets/images/tabBar/records.png";
   - Visual changes are only styling/markup to match screens. Business logic unchanged.
   - Ensure created time and a real order/task number are always shown (falling back to other fields when necessary).
 
-  New behavior:
-  - When pending combo groups contain 2+ products, only the top product in the group will show the normal "PENDING"
-    state and display the submit button (when canSubmit is true). All other products in the same combo group will show
-    "FROZEN" with a reddish pill color. The top product is the first item in the combo group (oldest by createdAt).
+  New behavior requested & implemented:
+  - When there is a combo group (records sharing comboGroupId) and that combo contains at least one Pending item,
+    the group is shown under the Pending tab. The top product in the combo (oldest by createdAt) is treated as the
+    submit candidate: it always appears above its combo-mates, shows the yellow "PENDING" pill and will render the
+    submit button (when canSubmit is true). All other products in that combo are shown immediately below the top item
+    and display the red "FROZEN" pill (no submit button). Other view behavior remains unchanged.
 */
 
 const tabs = ["All", "Pending", "Completed"];
@@ -249,11 +251,11 @@ const Records = () => {
     return () => clearInterval(iv);
   }, [fetchTaskRecords]);
 
-  // Helper: group pending combo items
-  function getPendingComboGroups(recordsList) {
+  // Helper: group all records by comboGroupId and sort groups by createdAt ascending
+  function getAllComboGroups(recordsList) {
     const groups = {};
     for (const rec of recordsList) {
-      if (String(rec.status).toLowerCase() === "pending" && rec.comboGroupId) {
+      if (rec.comboGroupId) {
         if (!groups[rec.comboGroupId]) groups[rec.comboGroupId] = [];
         groups[rec.comboGroupId].push(rec);
       }
@@ -262,11 +264,6 @@ const Records = () => {
       arr.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
     );
     return groups;
-  }
-
-  function getLastPendingComboTaskCode(comboRecords) {
-    if (!comboRecords || comboRecords.length === 0) return null;
-    return comboRecords[comboRecords.length - 1].taskCode;
   }
 
   const getRecordKey = (record, i) => {
@@ -314,59 +311,70 @@ const Records = () => {
     }, 300); // small debounce (not 3s) to speed UI responsiveness
   };
 
+  // Build general combo groups from all records (used to determine combo membership & top-of-group)
+  const comboGroupsAll = getAllComboGroups(displayRecords);
+
+  // Determine which groups have at least one pending item -> these groups should be shown under Pending tab
+  const pendingGroupIds = new Set();
+  Object.entries(comboGroupsAll).forEach(([groupId, members]) => {
+    if (members.some(m => String(m.status).toLowerCase() === "pending")) {
+      pendingGroupIds.add(groupId);
+    }
+  });
+
   // Filter records by tab
-  const filteredRecords = (displayRecords || []).filter(
-    (record) =>
-      activeTab === "All" ||
-      (record.status && record.status.toLowerCase() === activeTab.toLowerCase())
-  );
+  // Important: for the Pending tab include any record that is pending OR is part of a combo group that has a pending item.
+  const filteredRecords = (displayRecords || []).filter((record) => {
+    if (activeTab === "All") return true;
+    if (activeTab === "Pending") {
+      if (String(record.status).toLowerCase() === "pending") return true;
+      if (record.comboGroupId && pendingGroupIds.has(record.comboGroupId)) return true;
+      return false;
+    }
+    // Completed or other tabs: match by record.status
+    return (record.status && record.status.toLowerCase() === activeTab.toLowerCase());
+  });
 
-  // Build pending combo groups & frozen mapping.
-  const pendingComboGroups = getPendingComboGroups(filteredRecords);
-
+  // Build frozenMap and topMap:
+  // For groups that are in pendingGroupIds and have 2+ members, mark all members except the first (oldest) as frozen.
   const frozenMap = {};
-  // New behavior: when a group has >=2 items, we treat the first (oldest) as the top
-  // that can be submitted, and mark all other items in the same combo group as frozen.
-  Object.values(pendingComboGroups).forEach((group) => {
-    if (group.length >= 2) {
-      // group is sorted by createdAt ascending in getPendingComboGroups
-      // first element is the top (submit candidate); mark all others frozen
-      for (let idx = 1; idx < group.length; idx++) {
-        const frozenRec = group[idx];
-        if (frozenRec && frozenRec.taskCode) {
-          frozenMap[frozenRec.taskCode] = true;
-        }
+  const topMap = {}; // topMap[groupId] = taskCode of top item (oldest)
+  Object.entries(comboGroupsAll).forEach(([groupId, members]) => {
+    if (!pendingGroupIds.has(groupId)) return;
+    if (!members || members.length < 2) return;
+    // members sorted ascending by createdAt in comboGroupsAll
+    topMap[groupId] = members[0] && (members[0].taskCode || members[0]._id);
+    for (let idx = 1; idx < members.length; idx++) {
+      const rec = members[idx];
+      if (rec && rec.taskCode) {
+        frozenMap[rec.taskCode] = true;
       }
     }
   });
 
-  const lastPendingComboTaskCodes = Object.values(pendingComboGroups).map(getLastPendingComboTaskCode);
-
-  // Build sortedRecords: priority pending-combo items first (top non-frozen above frozen group mates),
-  // then other records in date-desc order.
+  // Build sortedRecords: ensure that for each pending combo group, the top (submit candidate) appears first,
+  // followed by its frozen siblings. Then append remaining records sorted by date desc.
   const byDateDesc = (x, y) => new Date(y.startedAt || y.createdAt) - new Date(x.startedAt || x.createdAt);
 
   const remaining = [...filteredRecords];
 
   const priorityList = [];
-  Object.values(pendingComboGroups).forEach((group) => {
-    // Ensure group order: non-frozen (top) first, then frozen group members
-    const nonFrozen = group.filter((r) => !frozenMap[r.taskCode]);
-    const frozen = group.filter((r) => frozenMap[r.taskCode]);
-
-    nonFrozen.forEach((r) => {
-      priorityList.push(r);
-      const idx = remaining.findIndex((x) => (x.taskCode || x._id) === (r.taskCode || r._id));
-      if (idx !== -1) remaining.splice(idx, 1);
-    });
-
-    frozen.forEach((r) => {
-      priorityList.push(r);
-      const idx = remaining.findIndex((x) => (x.taskCode || x._id) === (r.taskCode || r._id));
-      if (idx !== -1) remaining.splice(idx, 1);
+  // For deterministic ordering iterate pending groups and push members if they exist in remaining,
+  // top first then other members in group order.
+  Array.from(pendingGroupIds).forEach((groupId) => {
+    const membersAll = comboGroupsAll[groupId] || [];
+    // iterate members in ascending createdAt order (top first)
+    membersAll.forEach((member) => {
+      // include only if this member is part of filteredRecords (e.g., Pending tab)
+      const idx = remaining.findIndex((x) => (x.taskCode || x._id) === (member.taskCode || member._id));
+      if (idx !== -1) {
+        priorityList.push(remaining[idx]);
+        remaining.splice(idx, 1);
+      }
     });
   });
 
+  // Now add any other pending items that are not in groups (these remain in remaining)
   remaining.sort(byDateDesc);
 
   const sortedRecords = [...priorityList, ...remaining];
@@ -385,22 +393,28 @@ const Records = () => {
 
   const renderProductRecord = (record, i) => {
     const isFrozenDisplay = !!frozenMap[record.taskCode];
-    const displayStatusText = isFrozenDisplay ? "Frozen" : record.status;
+    const isTopInPendingGroup =
+      record.comboGroupId && pendingGroupIds.has(record.comboGroupId) && topMap[record.comboGroupId] === (record.taskCode || record._id);
+
+    // Determine displayed status text:
+    // - Frozen group members: "Frozen"
+    // - Top of pending group: show "Pending" (even if underlying status differs)
+    // - Otherwise show record.status
+    let displayStatusText = record.status;
+    if (isFrozenDisplay) displayStatusText = "Frozen";
+    else if (isTopInPendingGroup) displayStatusText = "Pending";
 
     // Decide badge color and text color
-    const badgeColor =
-      isFrozenDisplay ? "#ff6b6b" :
-      (record.status === "Pending" && record.comboGroupId && !isFrozenDisplay) ? "#FCD34D" :
-      record.status === "Pending" ? "#FCD34D" :
-      record.status === "Completed" ? START_BLUE : "#8fadc7";
-
-    const badgeTextColor = isFrozenDisplay ? "#ffffff" : (record.status === "Pending" ? "#1f2937" : "#ffffff");
+    const badgeColor = isFrozenDisplay ? "#ff6b6b" : (String(displayStatusText).toLowerCase() === "pending" ? "#FCD34D" : (record.status === "Completed" ? START_BLUE : "#8fadc7"));
+    const badgeTextColor = isFrozenDisplay ? "#ffffff" : (String(displayStatusText).toLowerCase() === "pending" ? "#1f2937" : "#ffffff");
 
     const showSubmitButton = (() => {
+      // Only show submit button on:
+      // - Top of pending combo group (isTopInPendingGroup) when canSubmit
+      // - Or non-combo/pending items that are allowed (preserve original behavior)
       if (submitted[record.taskCode] && record.status === "Completed") return true;
       if (record.comboGroupId) {
-        // only allow submit on pending + not frozen + canSubmit
-        return record.status === "Pending" && !isFrozenDisplay && record.canSubmit;
+        return isTopInPendingGroup && record.canSubmit;
       }
       if (record.status === "Pending" && (!record.isCombo || record.canSubmit)) {
         return true;
