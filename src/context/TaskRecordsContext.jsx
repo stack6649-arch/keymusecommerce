@@ -25,7 +25,7 @@ export const TaskRecordsProvider = ({ children }) => {
 
     // Preserve server-provided frozen flag if present (boolean), else leave undefined for client fallback
     if (record.product && typeof record.product.frozen === "boolean") {
-      // keep as boolean
+      // keep as boolean (no change)
       record.product.frozen = record.product.frozen;
     }
 
