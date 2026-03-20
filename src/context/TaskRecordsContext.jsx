@@ -25,7 +25,6 @@ export const TaskRecordsProvider = ({ children }) => {
 
     // Preserve server-provided frozen flag if present (boolean), else leave undefined for client fallback
     if (record.product && typeof record.product.frozen === "boolean") {
-      // keep as boolean (no change)
       record.product.frozen = record.product.frozen;
     }
 
@@ -37,19 +36,13 @@ export const TaskRecordsProvider = ({ children }) => {
     return record;
   }
 
-  // Fetch records from backend and return the fetched array for callers that await it.
-  // Also dispatches a CustomEvent 'taskRecordsUpdated' after updating state so other parts
-  // of the app can react immediately if needed.
   const fetchTaskRecords = async () => {
     const token = localStorage.getItem("authToken");
-    // If there's no token, clear records and return empty array so callers get a deterministic result.
     if (!token) {
       setRecords([]);
       try {
         window.dispatchEvent(new CustomEvent("taskRecordsUpdated", { detail: [] }));
-      } catch (e) {
-        // noop
-      }
+      } catch (e) {}
       return [];
     }
     try {
@@ -92,11 +85,8 @@ export const TaskRecordsProvider = ({ children }) => {
         });
       });
 
-      // Ensure canSubmit defaults for combo items when server didn't set it:
-      // For combos server should send product.frozen and canSubmit, but if not, keep undefined
-      // so UI fallback (client-side computation) can decide.
+      // If server provided product.frozen but not canSubmit, set canSubmit accordingly
       const finalRecords = normalized.map((rec) => {
-        // If server provided product.frozen but not canSubmit, set canSubmit = !frozen
         if (rec.product && typeof rec.product.frozen === "boolean" && typeof rec.canSubmit === "undefined") {
           rec.canSubmit = !rec.product.frozen;
         }
@@ -106,18 +96,14 @@ export const TaskRecordsProvider = ({ children }) => {
       setRecords(finalRecords);
       try {
         window.dispatchEvent(new CustomEvent("taskRecordsUpdated", { detail: finalRecords }));
-      } catch (e) {
-        // noop
-      }
+      } catch (e) {}
       return finalRecords;
     } catch (err) {
-      // On network error, return the current state (do not clear) so callers won't hang.
       return records;
     }
   };
 
   useEffect(() => {
-    // Load initial records on provider mount.
     fetchTaskRecords();
     // eslint-disable-next-line
   }, []);
@@ -137,7 +123,6 @@ export const TaskRecordsProvider = ({ children }) => {
       });
       const data = await res.json();
       if (data && data.success) {
-        // Re-fetch records and return the API response
         const refreshed = await fetchTaskRecords();
         if (data.isCombo) {
           return {
@@ -160,7 +145,6 @@ export const TaskRecordsProvider = ({ children }) => {
     const token = localStorage.getItem("authToken");
     if (!token) return { success: false, message: "Not authenticated" };
     try {
-      // Build body including comboIndex when provided
       const body = typeof comboIndex === "number" ? { taskCode, comboIndex } : { taskCode };
       const res = await fetch(`${BASE_URL}/api/submit-task`, {
         method: "POST",
@@ -172,7 +156,6 @@ export const TaskRecordsProvider = ({ children }) => {
       });
       const data = await res.json();
       if (data && data.success) {
-        // Refresh records so UI shows the latest immediately
         await fetchTaskRecords();
         return data;
       }
@@ -182,7 +165,6 @@ export const TaskRecordsProvider = ({ children }) => {
     }
   };
 
-  // Convenience helpers kept for compatibility with existing code
   const hasPendingTask = () =>
     records.some((t) => String(t.status).toLowerCase() === "pending" && !t.isCombo);
 
@@ -193,7 +175,6 @@ export const TaskRecordsProvider = ({ children }) => {
     records.find((t) => String(t.status).toLowerCase() === "pending" && !t.isCombo) || null;
 
   const getPendingComboTasks = () => {
-    // Find first combo that is pending (this logic mirrors the original helper)
     const combo = records.find((t) => String(t.status).toLowerCase() === "pending" && t.isCombo);
     if (!combo || !combo.comboGroupId) return [];
     return records.filter((t) => String(t.status).toLowerCase() === "pending" && t.comboGroupId === combo.comboGroupId);
