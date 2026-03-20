@@ -22,6 +22,18 @@ export const TaskRecordsProvider = ({ children }) => {
     record.status = typeof record.status === "string" ? record.status : (record.state || "");
     // preserve isCombo if backend provides, else we'll compute later
     record.isCombo = !!record.isCombo;
+
+    // Preserve server-provided frozen flag if present (boolean), else leave undefined for client fallback
+    if (record.product && typeof record.product.frozen === "boolean") {
+      // keep as boolean
+      record.product.frozen = record.product.frozen;
+    }
+
+    // Preserve server-provided canSubmit if present; otherwise fallback to undefined (client will compute)
+    if (typeof record.canSubmit !== "undefined") {
+      record.canSubmit = !!record.canSubmit;
+    }
+
     return record;
   }
 
@@ -80,7 +92,16 @@ export const TaskRecordsProvider = ({ children }) => {
         });
       });
 
-      const finalRecords = normalized;
+      // Ensure canSubmit defaults for combo items when server didn't set it:
+      // For combos server should send product.frozen and canSubmit, but if not, keep undefined
+      // so UI fallback (client-side computation) can decide.
+      const finalRecords = normalized.map((rec) => {
+        // If server provided product.frozen but not canSubmit, set canSubmit = !frozen
+        if (rec.product && typeof rec.product.frozen === "boolean" && typeof rec.canSubmit === "undefined") {
+          rec.canSubmit = !rec.product.frozen;
+        }
+        return rec;
+      });
 
       setRecords(finalRecords);
       try {
@@ -133,18 +154,21 @@ export const TaskRecordsProvider = ({ children }) => {
     }
   };
 
-  // Submit a task by taskCode ONLY!
-  const submitTaskRecord = async (taskCode) => {
+  // Submit a task by taskCode.
+  // Accept optional comboIndex for combo per-product submission (pass undefined for non-combo submits).
+  const submitTaskRecord = async (taskCode, comboIndex) => {
     const token = localStorage.getItem("authToken");
     if (!token) return { success: false, message: "Not authenticated" };
     try {
+      // Build body including comboIndex when provided
+      const body = typeof comboIndex === "number" ? { taskCode, comboIndex } : { taskCode };
       const res = await fetch(`${BASE_URL}/api/submit-task`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "X-Auth-Token": token,
         },
-        body: JSON.stringify({ taskCode }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (data && data.success) {
@@ -152,7 +176,7 @@ export const TaskRecordsProvider = ({ children }) => {
         await fetchTaskRecords();
         return data;
       }
-      return { success: false, message: data?.message, mustDeposit: !!data?.mustDeposit };
+      return { success: false, message: data?.message, mustDeposit: !!data?.mustDeposit, code: data?.code };
     } catch (err) {
       return { success: false, message: "Network error" };
     }
