@@ -204,6 +204,7 @@ export default function Tasks() {
   const [greyToast, setGreyToast] = useState({ show: false, message: "" });
 
   // NEW: Track frozen amount shown in UI while an order is pending submission.
+  // Only used to display the deducted amount locally in the UI (frontend-only).
   const [frozenAmount, setFrozenAmount] = useState(0);
 
   const navigate = useNavigate();
@@ -228,38 +229,8 @@ export default function Tasks() {
   const [localCommissionToday, setLocalCommissionToday] = useState(commissionToday);
   useEffect(() => setLocalCommissionToday(commissionToday), [commissionToday]);
 
-  // Fetch frozenTotal from server (task-records) and set frozenAmount
-  const fetchFrozenTotal = async () => {
-    try {
-      const headers = { "Content-Type": "application/json" };
-      try {
-        const token = localStorage.getItem("token");
-        if (token) headers["x-auth-token"] = token;
-      } catch (e) {
-        // ignore localStorage issues
-      }
-      const resp = await fetch(`${API_BASE}/api/task-records`, { method: "GET", headers });
-      if (!resp.ok) return;
-      const data = await resp.json();
-      if (data && typeof data.frozenTotal !== "undefined") {
-        const val = Number(data.frozenTotal || 0);
-        setFrozenAmount(Number.isFinite(val) ? val : 0);
-      }
-    } catch (err) {
-      // silent
-    }
-  };
-
   useEffect(() => {
-    // refresh profile and then fetch server frozen total to ensure balance + frozen sync
-    (async () => {
-      try {
-        refreshProfile && (await refreshProfile());
-      } catch (e) {
-        // noop
-      }
-      fetchFrozenTotal();
-    })();
+    refreshProfile && refreshProfile();
   }, []);
 
   useEffect(() => setProductGrid(getRandomProducts()), []);
@@ -332,6 +303,7 @@ export default function Tasks() {
   };
 
   // Helper: compute frozen amount for a task (supports either single product or array of products)
+  // This is used only on the frontend to display the deducted amount when a task starts.
   const computeFrozenFromTask = (task) => {
     if (!task) return 0;
     // common shape: task.product { price: ... }
@@ -439,17 +411,14 @@ export default function Tasks() {
           // noop
         }
 
-        // NEW: compute and display frozen amount when a task is started (local quick preview)
+        // IMPORTANT (frontend-only): compute and display the deducted amount in Frozen Balance.
+        // We do NOT change any product.frozen flags or backend records here — this is UI-only.
         try {
           const frozen = computeFrozenFromTask(backendTask);
           setFrozenAmount(frozen);
         } catch (e) {
-          // noop
           setFrozenAmount(0);
         }
-
-        // Sync with server value for correctness (server is authoritative)
-        fetchFrozenTotal();
 
         return;
       }
@@ -480,7 +449,7 @@ export default function Tasks() {
       // Mark submitted in UI immediately
       setSubmitState("submitted");
 
-      // NEW: On successful submission, the frozen amount is refunded to balance -> clear frozenAmount locally
+      // Clear the frontend frozen amount because the backend refunds on submit
       setFrozenAmount(0);
 
       // Try to refresh profile but do not block longer than allowed.
@@ -508,9 +477,6 @@ export default function Tasks() {
         })(),
         new Promise((res) => setTimeout(res, MAX_REFRESH_MS)),
       ]);
-
-      // After profile refresh attempt, sync frozen amount with server to ensure correctness
-      fetchFrozenTotal();
 
       // Ensure we don't exceed MAX_TOTAL_MS from the start: compute elapsed and finish within allowed window.
       const elapsed = Date.now() - start;
