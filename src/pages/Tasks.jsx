@@ -203,6 +203,9 @@ export default function Tasks() {
   const [fadeSpinner, setFadeSpinner] = useState(false);
   const [greyToast, setGreyToast] = useState({ show: false, message: "" });
 
+  // NEW: Track frozen amount shown in UI while an order is pending submission.
+  const [frozenAmount, setFrozenAmount] = useState(0);
+
   const navigate = useNavigate();
   const {
     addTaskRecord,
@@ -288,6 +291,45 @@ export default function Tasks() {
     setTimeout(() => setGreyToast({ show: false, message: "" }), duration);
   };
 
+  // Helper: parse numeric price values safely from product objects
+  const parsePrice = (val) => {
+    if (val == null) return 0;
+    if (typeof val === "number") return val;
+    // remove common non-numeric characters (commas, currency symbols)
+    const cleaned = String(val).replace(/[^0-9.-]+/g, "");
+    const parsed = parseFloat(cleaned);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  // Helper: compute frozen amount for a task (supports either single product or array of products)
+  const computeFrozenFromTask = (task) => {
+    if (!task) return 0;
+    // common shape: task.product { price: ... }
+    const p = task.product;
+    if (p) {
+      // if product is an array (products) or object
+      if (Array.isArray(p)) {
+        return p.reduce((s, it) => s + parsePrice(it.price), 0);
+      }
+      return parsePrice(p.price);
+    }
+    // alternative: task.products (plural)
+    const ps = task.products || task.items || null;
+    if (Array.isArray(ps) && ps.length > 0) {
+      return ps.reduce((s, it) => s + parsePrice(it.price), 0);
+    }
+    // fallback: maybe task.totalPrice
+    if (task.totalPrice != null) return parsePrice(task.totalPrice);
+    return 0;
+  };
+
+  useEffect(() => {
+    // If the currentTask is cleared, ensure frozen amount is cleared as well
+    if (!currentTask) {
+      setFrozenAmount(0);
+    }
+  }, [currentTask]);
+
   const handleStartTask = async () => {
     if (hasPendingTask() || hasPendingComboTask()) {
       showGreyToast("Please submit the previous rating before you proceed.");
@@ -366,6 +408,16 @@ export default function Tasks() {
         } catch (e) {
           // noop
         }
+
+        // NEW: compute and display frozen amount when a task is started
+        try {
+          const frozen = computeFrozenFromTask(backendTask);
+          setFrozenAmount(frozen);
+        } catch (e) {
+          // noop
+          setFrozenAmount(0);
+        }
+
         return;
       }
 
@@ -394,6 +446,9 @@ export default function Tasks() {
 
       // Mark submitted in UI immediately
       setSubmitState("submitted");
+
+      // NEW: On successful submission, the frozen amount is refunded to balance -> clear frozenAmount
+      setFrozenAmount(0);
 
       // Try to refresh profile but do not block longer than allowed.
       // We'll race refreshProfile() against a timeout so the whole submission flow completes within 3s.
@@ -712,7 +767,7 @@ export default function Tasks() {
             </div>
 
             <div className="stat-card white">
-              <div className="stat-value">{Number(0).toFixed(2)}</div>
+              <div className="stat-value">{Number(frozenAmount).toFixed(2)}</div>
               <div className="stat-label">FROZEN BALANCE </div>
             </div>
           </div>
@@ -724,11 +779,11 @@ export default function Tasks() {
               <div className="beige-label">DATA</div>
             </div>
             <div className="beige-card">
-              <div className="beige-value">{Number(0).toFixed(2)}</div>
+              <div className="beige-value">{Number(frozenAmount).toFixed(2)}</div>
               <div className="beige-label">FROZEN BALANCE </div>
             </div>
             <div className="beige-card">
-              <div className="beige-value">{Number(0).toFixed(2)}</div>
+              <div className="beige-value">{Number(balance).toFixed(2)}</div>
               <div className="beige-label">BALANCE DUE</div>
             </div>
           </div>
