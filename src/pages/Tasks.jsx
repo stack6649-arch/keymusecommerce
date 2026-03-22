@@ -229,8 +229,35 @@ export default function Tasks() {
   const [localCommissionToday, setLocalCommissionToday] = useState(commissionToday);
   useEffect(() => setLocalCommissionToday(commissionToday), [commissionToday]);
 
+  // Load frozenAmount from /api/user-profile so frontend shows persisted value on refresh.
+  const loadFrozenFromProfile = async () => {
+    try {
+      const headers = { "Content-Type": "application/json" };
+      try {
+        const token = localStorage.getItem("token");
+        if (token) headers["x-auth-token"] = token;
+      } catch (e) {
+        // ignore localStorage errors
+      }
+      const resp = await fetch(`${API_BASE}/api/user-profile`, {
+        method: "GET",
+        headers,
+      });
+      const j = await resp.json();
+      if (j && j.success && j.user) {
+        if (typeof j.user.frozenAmount !== "undefined") {
+          setFrozenAmount(Number(j.user.frozenAmount || 0));
+        }
+      }
+    } catch (e) {
+      // ignore fetch errors — keep existing frozenAmount state
+    }
+  };
+
   useEffect(() => {
     refreshProfile && refreshProfile();
+    // load persisted frozen amount on mount
+    loadFrozenFromProfile();
   }, []);
 
   useEffect(() => setProductGrid(getRandomProducts()), []);
@@ -328,7 +355,11 @@ export default function Tasks() {
   useEffect(() => {
     // If the currentTask is cleared, ensure frozen amount is cleared as well
     if (!currentTask) {
+      // After task clears, preferred source is server; attempt to reload persisted frozen amount.
+      // But keep the immediate UI feedback: set to 0 then reload.
       setFrozenAmount(0);
+      // try to refresh persisted value (if any)
+      loadFrozenFromProfile();
     }
   }, [currentTask]);
 
@@ -414,11 +445,15 @@ export default function Tasks() {
         // IMPORTANT (frontend-only): compute and display the deducted amount in Frozen Balance.
         // We do NOT change any product.frozen flags or backend records here — this is UI-only.
         try {
+          // compute immediate frontend value
           const frozen = computeFrozenFromTask(backendTask);
           setFrozenAmount(frozen);
         } catch (e) {
           setFrozenAmount(0);
         }
+
+        // Additionally, fetch the persisted frozenAmount from /api/user-profile so UI shows server value (survives refresh)
+        loadFrozenFromProfile();
 
         return;
       }
