@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import csImage from "../assets/images/CS-Keymus.png";
 
 export default function CustomerServiceModal({ open, onClose }) {
@@ -11,31 +10,18 @@ export default function CustomerServiceModal({ open, onClose }) {
 
   useEffect(() => {
     if (!open) return;
-
-    const loadLinks = async () => {
-      // Hard-coded backend base URL (as requested)
-      const BASE_URL = "https://stacksapp-backend-main.onrender.com";
-      try {
-        const url = `${BASE_URL}/service-links?ts=${Date.now()}`;
-        const res = await axios.get(url, { withCredentials: true, timeout: 5000 });
-        let payload = res && res.data ? res.data : {};
-        // Support response shapes:
-        // { success, source, data: { ... } } OR directly the object { telegram1: ..., telegram2: ... }
-        if (payload && payload.data) payload = payload.data;
-        if (payload && payload.serviceLinks) payload = payload.serviceLinks;
+    fetch("https://stacksapp-backend-main.onrender.com/service-links.json?ts=" + Date.now())
+      .then((res) => res.json())
+      .then((data) => {
         setLinks({
-          telegram1: (payload && payload.telegram1) || "",
-          telegram2: (payload && payload.telegram2) || "",
-          customerService: (payload && payload.whatsapp) || "",
+          telegram1: data.telegram1 || "",
+          telegram2: data.telegram2 || "",
+          customerService: data.whatsapp || "",
         });
-      } catch (err) {
-        // on error clear links so UI disables buttons
-        console.warn("CustomerServiceModal: failed to load service-links:", err && err.message ? err.message : err);
+      })
+      .catch(() => {
         setLinks({ telegram1: "", telegram2: "", customerService: "" });
-      }
-    };
-
-    loadLinks();
+      });
   }, [open]);
 
   if (!open) return null;
