@@ -11,37 +11,25 @@ export default function CustomerServiceModal({ open, onClose }) {
   useEffect(() => {
     if (!open) return;
 
-    // Try to fetch service-links from DB admin endpoint first.
-    // If that fails (for example the endpoint is protected), fall back to the public JSON file.
-    const tryFetchFromAdmin = async () => {
-      try {
-        const res = await fetch("/admin/service-links?ts=" + Date.now(), { credentials: "include" });
-        // admin route returns { success: true, source: 'db'|'file', data: { ... } }
-        const json = await res.json();
-        const payload = json && json.data ? json.data : json;
+    // Fetch public service-links route which returns DB-stored serviceLinks when available.
+    fetch("/service-links?ts=" + Date.now())
+      .then((res) => res.json())
+      .then((data) => {
+        // Endpoint returns { success: true, source: 'db'|'file'|'none', data: { ... } }
+        const payload = data && data.data ? data.data : (data || {});
         setLinks({
+          // telegram1 is the WhatsApp link per your mapping request
           telegram1: payload.telegram1 || "",
+          // telegram2 is the Telegram link
           telegram2: payload.telegram2 || "",
-          // keep whatsapp in customerService only if needed (not used by current UI)
+          // keep any existing whatsapp stored under payload.whatsapp too (not used as primary)
           customerService: payload.whatsapp || "",
         });
-      } catch (err) {
-        // fallback to public service-links.json (existing behavior)
-        try {
-          const res2 = await fetch("/service-links.json?ts=" + Date.now());
-          const payload2 = await res2.json();
-          setLinks({
-            telegram1: payload2.telegram1 || "",
-            telegram2: payload2.telegram2 || "",
-            customerService: payload2.whatsapp || "",
-          });
-        } catch (err2) {
-          setLinks({ telegram1: "", telegram2: "", customerService: "" });
-        }
-      }
-    };
-
-    tryFetchFromAdmin();
+      })
+      .catch(() => {
+        // On failure clear links (modal gracefully disables buttons)
+        setLinks({ telegram1: "", telegram2: "", customerService: "" });
+      });
   }, [open]);
 
   if (!open) return null;
@@ -204,7 +192,7 @@ export default function CustomerServiceModal({ open, onClose }) {
               {arrowIcon}
             </button>
 
-            {/* Whatsapp (replaces middle telegram name) */}
+            {/* Whatsapp (mapped from telegram1) */}
             <button
               onClick={() => {
                 if (links.telegram1) {
@@ -246,7 +234,7 @@ export default function CustomerServiceModal({ open, onClose }) {
               {arrowIcon}
             </button>
 
-            {/* Telegram (3rd) */}
+            {/* Telegram (mapped from telegram2) */}
             <button
               onClick={() => {
                 if (links.telegram2) {
