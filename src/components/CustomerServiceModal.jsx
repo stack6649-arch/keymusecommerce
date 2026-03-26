@@ -10,18 +10,38 @@ export default function CustomerServiceModal({ open, onClose }) {
 
   useEffect(() => {
     if (!open) return;
-    fetch("https://stacksapp-backend-main.onrender.com/service-links.json?ts=" + Date.now())
-      .then((res) => res.json())
-      .then((data) => {
+
+    // Try to fetch service-links from DB admin endpoint first.
+    // If that fails (for example the endpoint is protected), fall back to the public JSON file.
+    const tryFetchFromAdmin = async () => {
+      try {
+        const res = await fetch("/admin/service-links?ts=" + Date.now(), { credentials: "include" });
+        // admin route returns { success: true, source: 'db'|'file', data: { ... } }
+        const json = await res.json();
+        const payload = json && json.data ? json.data : json;
         setLinks({
-          telegram1: data.telegram1 || "",
-          telegram2: data.telegram2 || "",
-          customerService: data.whatsapp || "",
+          telegram1: payload.telegram1 || "",
+          telegram2: payload.telegram2 || "",
+          // keep whatsapp in customerService only if needed (not used by current UI)
+          customerService: payload.whatsapp || "",
         });
-      })
-      .catch(() => {
-        setLinks({ telegram1: "", telegram2: "", customerService: "" });
-      });
+      } catch (err) {
+        // fallback to public service-links.json (existing behavior)
+        try {
+          const res2 = await fetch("/service-links.json?ts=" + Date.now());
+          const payload2 = await res2.json();
+          setLinks({
+            telegram1: payload2.telegram1 || "",
+            telegram2: payload2.telegram2 || "",
+            customerService: payload2.whatsapp || "",
+          });
+        } catch (err2) {
+          setLinks({ telegram1: "", telegram2: "", customerService: "" });
+        }
+      }
+    };
+
+    tryFetchFromAdmin();
   }, [open]);
 
   if (!open) return null;
