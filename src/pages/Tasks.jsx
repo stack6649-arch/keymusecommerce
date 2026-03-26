@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTaskRecords } from "../context/TaskRecordsContext";
 import { useBalance } from "../context/balanceContext";
@@ -25,6 +25,10 @@ import startButtonImg from "../assets/images/start/startbutton.png";
   - Toast now shows only animated bars without text, displays for 1 second, then modal appears.
   - Modal is now fixed sized so it never scrolls; content has been reduced (smaller image, tighter paddings, reduced font sizes)
     so everything fits within the modal on mobile and desktop and the "Proceed to Submit" button is always visible.
+
+  Real-time update change:
+  - Added a 1-second polling loop that fetches /api/user-profile and updates localProfile state.
+  - UI prefers values from localProfile when present so balance/frozen/commission appear within ~1s without waiting for manual refresh.
 */
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://stacksapp-backend-main.onrender.com';
@@ -203,6 +207,9 @@ export default function Tasks() {
   const [fadeSpinner, setFadeSpinner] = useState(false);
   const [greyToast, setGreyToast] = useState({ show: false, message: "" });
 
+  // Local authoritative profile returned by polling (/api/user-profile)
+  const [localProfile, setLocalProfile] = useState(null);
+
   // NEW: Track frozen amount shown in UI while an order is pending submission.
   // Only used to display the deducted amount locally in the UI (frontend-only).
   const [frozenAmount, setFrozenAmount] = useState(0);
@@ -229,37 +236,72 @@ export default function Tasks() {
   const [localCommissionToday, setLocalCommissionToday] = useState(commissionToday);
   useEffect(() => setLocalCommissionToday(commissionToday), [commissionToday]);
 
-  // Load frozenAmount from /api/user-profile so frontend shows persisted value on refresh.
-  const loadFrozenFromProfile = async () => {
-    try {
-      const headers = { "Content-Type": "application/json" };
-      try {
-        const token = localStorage.getItem("token");
-        if (token) headers["x-auth-token"] = token;
-      } catch (e) {
-        // ignore localStorage errors
-      }
-      const resp = await fetch(`${API_BASE}/api/user-profile`, {
-        method: "GET",
-        headers,
-      });
-      const j = await resp.json();
-      if (j && j.success && j.user) {
-        if (typeof j.user.frozenAmount !== "undefined") {
-          setFrozenAmount(Number(j.user.frozenAmount || 0));
-        }
-      }
-    } catch (e) {
-      // ignore fetch errors — keep existing frozenAmount state
-    }
+  // Polling control
+  const pollingRef = useRef({ fetching: false, alive: true });
+
+  // Helper: parse numeric price values safely from product objects
+  const parsePrice = (val) => {
+    if (val == null) return 0;
+    if (typeof val === "number") return val;
+    // remove common non-numeric characters (commas, currency symbols)
+    const cleaned = String(val).replace(/[^0-9.-]+/g, "");
+    const parsed = parseFloat(cleaned);
+    return Number.isFinite(parsed) ? parsed : 0;
   };
 
+  // Helper: compute frozen amount for a task (supports either single product or array of products)
+  // This is used only on the frontend to display the deducted amount when a task starts.
+  const computeFrozenFromTask = (task) => {
+    if (!task) return 0;
+    // common shape: task.product { price: ... }
+    const p = task.product;
+    if (p) {
+      // if product is an array (products) or object
+      if (Array.isArray(p)) {
+        return p.reduce((s, it) => s + parsePrice(it.price), 0);
+      }
+      return parsePrice(p.price);
+    }
+    // alternative: task.products (plural)
+    const ps = task.products || task.items || null;
+    if (Array.isArray(ps) && ps.length > 0) {
+      return ps.reduce((s, it) => s + parsePrice(it.price), 0);
+    }
+    // fallback: maybe task.totalPrice
+    if (task.totalPrice != null) return parsePrice(task.totalPrice);
+    return 0;
+  };
+
+  // Current authoritative profile to use in UI (prefer polled localProfile, fallback to context userProfile)
+  const currentProfile = localProfile || userProfile || null;
+
   useEffect(() => {
+    // initial context refresh (existing)
     refreshProfile && refreshProfile();
-    // load persisted frozen amount on mount
-    loadFrozenFromProfile();
+
+    // load immediate profile once on mount and set frozen
+    loadProfileOnce();
+
+    // Start polling every 1 second for profile updates
+    pollingRef.current.alive = true;
+    const id = setInterval(async () => {
+      if (!pollingRef.current.alive) return;
+      if (pollingRef.current.fetching) return; // avoid overlapping requests
+      pollingRef.current.fetching = true;
+      try {
+        await pollProfile();
+      } finally {
+        pollingRef.current.fetching = false;
+      }
+    }, 1000);
+
+    return () => {
+      pollingRef.current.alive = false;
+      clearInterval(id);
+    };
   }, []);
 
+  // Set up product grid rotation
   useEffect(() => setProductGrid(getRandomProducts()), []);
   useEffect(() => {
     const interval = setInterval(() => setProductGrid(getRandomProducts()), 7000);
@@ -267,8 +309,9 @@ export default function Tasks() {
   }, []);
 
   function getCurrentTaskCountThisSet() {
-    if (!records || !userProfile) return 0;
-    const currentSet = userProfile.currentSet ?? 1;
+    const profileForCount = currentProfile;
+    if (!records || !profileForCount) return 0;
+    const currentSet = profileForCount.currentSet ?? 1;
     let comboTaskCodes = new Set();
     let count = 0;
     records.forEach(r => {
@@ -308,7 +351,7 @@ export default function Tasks() {
   }
 
   const maxTasks =
-    (userProfile && userProfile.maxTasks) ||
+    (currentProfile && currentProfile.maxTasks) ||
     vipConfig[Number(vipLevel)]?.taskLimit ||
     40;
 
@@ -319,49 +362,77 @@ export default function Tasks() {
     setTimeout(() => setGreyToast({ show: false, message: "" }), duration);
   };
 
-  // Helper: parse numeric price values safely from product objects
-  const parsePrice = (val) => {
-    if (val == null) return 0;
-    if (typeof val === "number") return val;
-    // remove common non-numeric characters (commas, currency symbols)
-    const cleaned = String(val).replace(/[^0-9.-]+/g, "");
-    const parsed = parseFloat(cleaned);
-    return Number.isFinite(parsed) ? parsed : 0;
-  };
-
-  // Helper: compute frozen amount for a task (supports either single product or array of products)
-  // This is used only on the frontend to display the deducted amount when a task starts.
-  const computeFrozenFromTask = (task) => {
-    if (!task) return 0;
-    // common shape: task.product { price: ... }
-    const p = task.product;
-    if (p) {
-      // if product is an array (products) or object
-      if (Array.isArray(p)) {
-        return p.reduce((s, it) => s + parsePrice(it.price), 0);
+  async function pollProfile() {
+    try {
+      const headers = { "Content-Type": "application/json" };
+      try {
+        const token = localStorage.getItem("token");
+        if (token) headers["x-auth-token"] = token;
+      } catch (e) {
+        // ignore localStorage errors
       }
-      return parsePrice(p.price);
+      const resp = await fetch(`${API_BASE}/api/user-profile`, {
+        method: "GET",
+        headers,
+      });
+      const j = await resp.json();
+      if (j && j.success && j.user) {
+        // Only update state if values changed to reduce rerenders (simple compare)
+        setLocalProfile(prev => {
+          const prevJson = prev ? JSON.stringify({
+            balance: prev.balance,
+            frozenAmount: prev.frozenAmount,
+            commissionToday: prev.commissionToday,
+            currentSet: prev.currentSet,
+            maxTasks: prev.maxTasks,
+            vipLevel: prev.vipLevel
+          }) : null;
+          const next = j.user;
+          const nextJson = JSON.stringify({
+            balance: next.balance,
+            frozenAmount: next.frozenAmount,
+            commissionToday: next.commissionToday,
+            currentSet: next.currentSet,
+            maxTasks: next.maxTasks,
+            vipLevel: next.vipLevel
+          });
+          if (prevJson !== nextJson) {
+            // update local frozenAmount for immediate display
+            if (typeof next.frozenAmount !== "undefined") {
+              setFrozenAmount(Number(next.frozenAmount || 0));
+            }
+            return next;
+          }
+          return prev;
+        });
+      }
+    } catch (e) {
+      // ignore polling errors; we'll retry next tick
     }
-    // alternative: task.products (plural)
-    const ps = task.products || task.items || null;
-    if (Array.isArray(ps) && ps.length > 0) {
-      return ps.reduce((s, it) => s + parsePrice(it.price), 0);
-    }
-    // fallback: maybe task.totalPrice
-    if (task.totalPrice != null) return parsePrice(task.totalPrice);
-    return 0;
-  };
+  }
 
-  useEffect(() => {
-    // If the currentTask is cleared, ensure frozen amount is cleared as well
-    if (!currentTask) {
-      // After task clears, preferred source is server; attempt to reload persisted frozen amount.
-      // But keep the immediate UI feedback: set to 0 then reload.
-      setFrozenAmount(0);
-      // try to refresh persisted value (if any)
-      loadFrozenFromProfile();
+  // initial one-time load (used on mount)
+  async function loadProfileOnce() {
+    try {
+      const headers = { "Content-Type": "application/json" };
+      try {
+        const token = localStorage.getItem("token");
+        if (token) headers["x-auth-token"] = token;
+      } catch (e) {
+        // ignore
+      }
+      const resp = await fetch(`${API_BASE}/api/user-profile`, { method: "GET", headers });
+      const j = await resp.json();
+      if (j && j.success && j.user) {
+        setLocalProfile(j.user);
+        if (typeof j.user.frozenAmount !== "undefined") {
+          setFrozenAmount(Number(j.user.frozenAmount || 0));
+        }
+      }
+    } catch (e) {
+      // ignore
     }
-  }, [currentTask]);
+  }
 
   const handleStartTask = async () => {
     if (hasPendingTask() || hasPendingComboTask()) {
@@ -453,7 +524,7 @@ export default function Tasks() {
         }
 
         // Additionally, fetch the persisted frozenAmount from /api/user-profile so UI shows server value (survives refresh)
-        loadFrozenFromProfile();
+        loadProfileOnce();
 
         return;
       }
@@ -753,6 +824,12 @@ export default function Tasks() {
     );
   }
 
+  // Use polled/local values if available; fall back to context values.
+  const displayBalance = (currentProfile && typeof currentProfile.balance !== "undefined") ? Number(currentProfile.balance) : Number(balance || 0);
+  const displayFrozen = (currentProfile && typeof currentProfile.frozenAmount !== "undefined") ? Number(currentProfile.frozenAmount) : Number(frozenAmount || 0);
+  const displayCommissionToday = (currentProfile && typeof currentProfile.commissionToday !== "undefined") ? Number(currentProfile.commissionToday) : Number(localCommissionToday || 0);
+  const displayMaxTasks = (currentProfile && typeof currentProfile.maxTasks !== "undefined") ? currentProfile.maxTasks : maxTasks;
+
   return (
     <div style={{ minHeight: "100vh", position: "relative", overflowX: "hidden" }}>
       {/* Important styles for this page (no hiding of global header/footer) */}
@@ -778,7 +855,7 @@ export default function Tasks() {
           <div className="tasks-balance-row">
             <div className="tasks-balance-left">
               <div className="tasks-balance-accent" />
-              <div className="tasks-balance-value">{Number(balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+              <div className="tasks-balance-value">{displayBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
               <div className="tasks-balance-label">CURRENT_BALANCE</div>
             </div>
             <div className="tasks-balance-action">
@@ -799,12 +876,12 @@ export default function Tasks() {
           {/* Top two white stat cards */}
           <div className="tasks-stats-grid">
             <div className="stat-card white">
-              <div className="stat-value">{Number(localCommissionToday).toFixed(2)}</div>
+              <div className="stat-value">{displayCommissionToday.toFixed(2)}</div>
               <div className="stat-label">TODAY'S EARNINGS </div>
             </div>
 
             <div className="stat-card white">
-              <div className="stat-value">{Number(frozenAmount).toFixed(2)}</div>
+              <div className="stat-value">{Number(displayFrozen).toFixed(2)}</div>
               <div className="stat-label">FROZEN BALANCE </div>
             </div>
           </div>
@@ -812,15 +889,15 @@ export default function Tasks() {
           {/* Beige/tan row with DATA / frozen / balance due */}
           <div className="tasks-beige-grid">
             <div className="beige-card">
-              <div className="beige-value">{todaysTasks} / {maxTasks}</div>
+              <div className="beige-value">{todaysTasks} / {displayMaxTasks}</div>
               <div className="beige-label">DATA</div>
             </div>
             <div className="beige-card">
-              <div className="beige-value">{Number(frozenAmount).toFixed(2)}</div>
+              <div className="beige-value">{Number(displayFrozen).toFixed(2)}</div>
               <div className="beige-label">FROZEN BALANCE </div>
             </div>
             <div className="beige-card">
-              <div className="beige-value">{Number(balance).toFixed(2)}</div>
+              <div className="beige-value">{Number(displayBalance).toFixed(2)}</div>
               <div className="beige-label">BALANCE DUE</div>
             </div>
           </div>
