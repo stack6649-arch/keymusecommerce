@@ -6,6 +6,7 @@ import { ProfileProvider } from "./context/profileContext";
 import { TransactionProvider } from "./context/transactionContext";
 import { ToastProvider } from "./context/ToastContext";
 import "./index.css";
+import SettingsProvider from "./context/SettingsContext";
 
 export default function App() {
   const [isInitialized, setIsInitialized] = useState(false);
@@ -95,17 +96,19 @@ export default function App() {
 
   return (
     <ToastProvider>
-      <ProfileProvider>
-        <BalanceProvider>
-          <TaskRecordsProvider>
-            <TransactionProvider>
-              <div className="min-h-screen bg-gray-100">
-                <AppRoutes />
-              </div>
-            </TransactionProvider>
-          </TaskRecordsProvider>
-        </BalanceProvider>
-      </ProfileProvider>
+      <SettingsProvider>
+        <ProfileProvider>
+          <BalanceProvider>
+            <TaskRecordsProvider>
+              <TransactionProvider>
+                <div className="min-h-screen bg-gray-100">
+                  <AppRoutes />
+                </div>
+              </TransactionProvider>
+            </TaskRecordsProvider>
+          </BalanceProvider>
+        </ProfileProvider>
+      </SettingsProvider>
     </ToastProvider>
   );
 }
