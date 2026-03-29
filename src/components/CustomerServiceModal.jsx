@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import csImage from "../assets/images/CS-Keymus.png";
+import { useSettings } from "../context/SettingsContext";
 
 export default function CustomerServiceModal({ open, onClose }) {
   const [links, setLinks] = useState({
@@ -8,21 +9,34 @@ export default function CustomerServiceModal({ open, onClose }) {
     customerService: "",
   });
 
+  const { getServiceLink, refreshSettings } = useSettings();
+
   useEffect(() => {
     if (!open) return;
-    fetch("https://stacksapp-backend-main.onrender.com/service-links.json?ts=" + Date.now())
-      .then((res) => res.json())
-      .then((data) => {
-        setLinks({
-          telegram1: data.telegram1 || "",
-          telegram2: data.telegram2 || "",
-          customerService: data.whatsapp || "",
-        });
-      })
-      .catch(() => {
-        setLinks({ telegram1: "", telegram2: "", customerService: "" });
+    // Prefer settings context service links (reads cached + background-fetched settings)
+    try {
+      const t1 = getServiceLink("telegram1") || "";
+      const t2 = getServiceLink("telegram2") || "";
+      const wa = getServiceLink("whatsapp") || getServiceLink("customerService") || "";
+      setLinks({
+        telegram1: t1,
+        telegram2: t2,
+        customerService: wa,
       });
-  }, [open]);
+
+      // If none present, attempt a refresh (best-effort) so links are fetched from server
+      if (!t1 && !t2 && !wa) {
+        try {
+          refreshSettings && refreshSettings();
+        } catch (e) {
+          // ignore
+        }
+      }
+    } catch (e) {
+      // fallback to empty links
+      setLinks({ telegram1: "", telegram2: "", customerService: "" });
+    }
+  }, [open, getServiceLink, refreshSettings]);
 
   if (!open) return null;
 
