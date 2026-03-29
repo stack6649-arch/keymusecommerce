@@ -228,7 +228,9 @@ export default function Tasks() {
     commissionToday,
     vipLevel,
     refreshProfile,
-    userProfile
+    userProfile,
+    applyStartDeduction,
+    applySubmitRefund
   } = useBalance();
 
   const { showToast } = useToast();
@@ -514,11 +516,13 @@ export default function Tasks() {
         }
 
         // IMPORTANT (frontend-only): compute and display the deducted amount in Frozen Balance.
-        // We do NOT change any product.frozen flags or backend records here — this is UI-only.
+        // Also apply optimistic deduction to the global balance so other pages reflect the deduction immediately.
         try {
-          // compute immediate frontend value
           const frozen = computeFrozenFromTask(backendTask);
+          // update page-local display
           setFrozenAmount(frozen);
+          // apply optimistic deduction globally (so dashboards and top bars update instantly)
+          try { applyStartDeduction && applyStartDeduction(frozen); } catch (e) {}
         } catch (e) {
           setFrozenAmount(0);
         }
@@ -557,6 +561,15 @@ export default function Tasks() {
 
       // Clear the frontend frozen amount because the backend refunds on submit
       setFrozenAmount(0);
+
+      // Apply optimistic refund to global balance and commission (if we can derive them)
+      try {
+        const refund = Number(result.task?.product?.price) || 0;
+        const commission = Number(result.task?.product?.commission) || 0;
+        try { applySubmitRefund && applySubmitRefund({ refundAmount: refund, commissionAmount: commission }); } catch (e) {}
+      } catch (e) {
+        // ignore if shape unknown
+      }
 
       // Try to refresh profile but do not block longer than allowed.
       // We'll race refreshProfile() against a timeout so the whole submission flow completes within 3s.
