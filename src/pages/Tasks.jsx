@@ -693,7 +693,7 @@ export default function Tasks() {
                 alt="Product"
                 style={{
                   width: "100%",
-                  height: "140px",         // limited fixed image height to keep modal compact
+                  height: "220px",         // increased image height so it uses more of the modal vertical space
                   borderRadius: 12,
                   objectFit: "cover",
                   display: "block",
@@ -719,6 +719,7 @@ export default function Tasks() {
                 padding: "4px 10px",
                 fontSize: 12,
                 fontWeight: 700,
+                marginTop: 8, /* moved down slightly so the image can take more vertical space above */
                 marginBottom: 6,
                 flex: "0 0 auto"
               }}>
