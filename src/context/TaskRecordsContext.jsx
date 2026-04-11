@@ -4,7 +4,7 @@ const TaskRecordsContext = createContext();
 
 export const TaskRecordsProvider = ({ children }) => {
   const [records, setRecords] = useState([]);
-  const BASE_URL = "https://stacksapp-backend-main.onrender.com";
+  const BASE_URL = "https://keymuse-backend.onrender.com";
 
   // Helper: normalize a fetched record to ensure fields the UI expects exist.
   function normalizeRecord(r) {
