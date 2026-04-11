@@ -5,7 +5,7 @@ const START_BLUE = "#0645d6";
 const LIGHT_BG = "#efeae7";
 
 // Use your API backend URL here!
-const BACKEND_API = "https://stacksapp-backend-main.onrender.com/api";
+const BACKEND_API = "https://keymuse-backend.onrender.com/api";
 
 export default function BindWallet({ onBack }) {
   const [fullName, setFullName] = useState("");
