@@ -31,7 +31,7 @@ import startButtonImg from "../assets/images/start/startbutton.png";
   - UI prefers values from localProfile when present so balance/frozen/commission appear within ~1s without waiting for manual refresh.
 */
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://stacksapp-backend-main.onrender.com';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://keymuse-backend.onrender.com';
 
 const CLOUDINARY_BASE = "https://res.cloudinary.com/dhubpqnss/image/upload/v1748650920/products/";
 const imageStart = 42;
