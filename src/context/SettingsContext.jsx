@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 
-const API_URL = import.meta.env.VITE_API_URL || "https://stacksapp-backend-main.onrender.com";
+const API_URL = import.meta.env.VITE_API_URL || "https://keymuse-backend.onrender.com";
 const STORAGE_KEY = "appSettings";
 
 const SettingsContext = createContext({
