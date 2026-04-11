@@ -17,7 +17,7 @@ import UpdatePassword from "./UpdatePassword.jsx";
 import UpdateWithdrawPassword from "./UpdateWithdrawPassword.jsx";
 
 // ---- API URL (kept as before) ----
-const API_URL = "https://stacksapp-backend-main.onrender.com";
+const API_URL = "https://keymuse-backend.onrender.com";
 
 // Branding colors used in screenshots
 const START_BLUE = "#1f4de6"; // deep profile heading blue
