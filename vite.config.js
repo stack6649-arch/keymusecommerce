@@ -18,7 +18,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "https://stacksapp-backend-main.onrender.com",
+        target: "https://keymuse-backend.onrender.com",
         changeOrigin: true,
         secure: false,
       },
