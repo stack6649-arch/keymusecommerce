@@ -420,6 +420,38 @@ export default function Dashboards() {
     fetchTaskRecords?.();
   }, []);
 
+  // Listen for external profile refresh triggers so credit score updates when admin changes it.
+  useEffect(() => {
+    const onProfileRefresh = () => {
+      if (typeof refreshProfile === "function") refreshProfile();
+    };
+    const onStorage = (e) => {
+      // If another tab updated localStorage.currentUser or userProfile, attempt to refresh.
+      if (!e) return;
+      const key = e.key;
+      if (!key) return;
+      if (key === "currentUser" || key === "userProfile") {
+        try {
+          // only trigger refresh if the stored object contains a creditScore change or exists
+          const newVal = e.newValue ? JSON.parse(e.newValue) : null;
+          if (newVal) {
+            // ask for a refresh so we display authoritative server value
+            if (typeof refreshProfile === "function") refreshProfile();
+          }
+        } catch (err) {
+          if (typeof refreshProfile === "function") refreshProfile();
+        }
+      }
+    };
+
+    window.addEventListener("profile:refresh", onProfileRefresh);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("profile:refresh", onProfileRefresh);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [refreshProfile]);
+
   // Map vip levels to names required by the product (1..4).
   // 1 => Basic, 2 => Premium, 3 => Elite, 4 => VIP
   const vipNames = {
@@ -435,6 +467,16 @@ export default function Dashboards() {
   // compute maxTasks (used by the registered-days logic for fallback set calculation)
   const maxTasks = (userProfile && userProfile.maxTasks) || vipConfig[Number(vipLevel)]?.taskLimit || 40;
 
+  // CREDIT SCORE: read from userProfile, fallback to legacy credit_score field, default to 100
+  const creditScore = (() => {
+    if (!userProfile) return 100;
+    const v = (typeof userProfile.creditScore !== "undefined")
+      ? userProfile.creditScore
+      : (typeof userProfile.credit_score !== "undefined" ? userProfile.credit_score : 100);
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 100;
+  })();
+
   return (
     <main className="dashboard-wrap">
 
@@ -446,7 +488,7 @@ export default function Dashboards() {
 
           <div className="cred-box">
             <span className="tier">{tierLabel} ★</span>
-            <span>Credibility: <b>100</b></span>
+            <span>Credibility: <b>{creditScore}%</b></span>
           </div>
 
         </div>
