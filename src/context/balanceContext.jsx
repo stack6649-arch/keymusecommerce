@@ -1,7 +1,7 @@
 // src/context/balanceContext.jsx
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 
-const BASE_URL = "https://keymuse-backend.onrender.com";
+const BASE_URL = "https://keymusadmin.onrender.com";
 
 export const BalanceContext = createContext();
 
