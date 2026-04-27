@@ -22,7 +22,7 @@ const vipConfig = {
 /* --- BEGIN: Copied/Integrated registered-working-days & sign-in helpers --- */
 
 // API base (keeps your existing VITE_API_URL fallback)
-const API_BASE = import.meta.env.VITE_API_URL || 'https://keymuse-backend.onrender.com';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://keymusadmin.onrender.com';
 
 // Helper: date key in Europe/London to match backend
 function toDateKey(d = new Date()) {
