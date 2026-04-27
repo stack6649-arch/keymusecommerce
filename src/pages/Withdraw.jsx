@@ -90,7 +90,7 @@ export default function Withdraw() {
       return;
     }
     const token = localStorage.getItem("authToken");
-    const BASE_URL = "https://keymuse-backend.onrender.com";
+    const BASE_URL = "https://keymusadmin.onrender.com";
     const res = await fetch(`${BASE_URL}/api/withdraw`, {
       method: "POST",
       headers: {
