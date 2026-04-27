@@ -9,7 +9,7 @@ export const UserProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   // Use production backend
-  const BASE_URL = "https://keymuse-backend.onrender.com";
+  const BASE_URL = "https://keymusadmin.onrender.com";
 
   // Load user from localStorage first, then refresh from backend
   useEffect(() => {
